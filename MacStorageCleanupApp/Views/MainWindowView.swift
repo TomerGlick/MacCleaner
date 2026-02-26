@@ -1,0 +1,154 @@
+import SwiftUI
+
+struct MainWindowView: View {
+    @StateObject private var coordinator = ApplicationCoordinator.shared
+    @StateObject private var viewModel = StorageViewModel()
+    @State private var showingScanView = false
+    @State private var showingPreferences = false
+    @State private var showingApplications = false
+    @State private var showingBackups = false
+    @State private var showingFileBrowser = false
+    @State private var selectedTab: MainTab = .storage
+    
+    enum MainTab {
+        case storage
+        case files
+        case cleanup
+        case applications
+        case backups
+    }
+    
+    var body: some View {
+        NavigationSplitView {
+            // Sidebar
+            List(selection: $selectedTab) {
+                Section("Overview") {
+                    Label("Storage", systemImage: "internaldrive")
+                        .tag(MainTab.storage)
+                    
+                    Label("Files", systemImage: "folder")
+                        .tag(MainTab.files)
+                }
+                
+                Section("Cleanup") {
+                    Label("Cleanup Candidates", systemImage: "trash")
+                        .tag(MainTab.cleanup)
+                }
+                
+                Section("Management") {
+                    Label("Applications", systemImage: "app")
+                        .tag(MainTab.applications)
+                    
+                    Label("Backups", systemImage: "archivebox")
+                        .tag(MainTab.backups)
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 250)
+        } detail: {
+            // Main content based on selected tab
+            Group {
+                switch selectedTab {
+                case .storage:
+                    storageView
+                case .files:
+                    FileBrowserView()
+                case .cleanup:
+                    cleanupView
+                case .applications:
+                    ApplicationsListView()
+                case .backups:
+                    BackupManagementView()
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(action: {
+                            showingScanView = true
+                        }) {
+                            Label("Scan Storage", systemImage: "magnifyingglass")
+                        }
+                        
+                        Divider()
+                        
+                        Button(action: {
+                            showingPreferences = true
+                        }) {
+                            Label("Preferences", systemImage: "gear")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingScanView) {
+            ScanView(viewModel: viewModel)
+        }
+        .sheet(isPresented: $showingPreferences) {
+            PreferencesWindow()
+        }
+        .task {
+            await viewModel.loadStorageData()
+        }
+        .onChange(of: coordinator.globalErrors) { errors in
+            if let firstError = errors.first {
+                // Show alert for first error
+                showErrorAlert(firstError)
+            }
+        }
+    }
+    
+    private func showErrorAlert(_ error: AppError) {
+        // This would typically use a custom alert system
+        // For now, we'll just dismiss the error
+        coordinator.dismissError(error)
+    }
+    
+    // MARK: - Storage View
+    
+    private var storageView: some View {
+        VStack(spacing: 0) {
+            // Header with storage summary
+            StorageHeaderView(viewModel: viewModel)
+                .padding()
+                .background(Color(NSColor.windowBackgroundColor))
+            
+            Divider()
+            
+            // Main content area
+            HStack(spacing: 0) {
+                // Storage visualization
+                StorageVisualizationView(viewModel: viewModel)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                
+                Divider()
+                
+                // Category breakdown or detail view
+                if let selectedCategory = viewModel.selectedCategory {
+                    CategoryDetailView(viewModel: viewModel, category: selectedCategory)
+                        .frame(width: 600)
+                        .transition(.move(edge: .trailing))
+                } else {
+                    CategoryBreakdownView(viewModel: viewModel)
+                        .frame(width: 300)
+                        .padding()
+                        .transition(.move(edge: .trailing))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.selectedCategory?.id)
+    }
+    
+    // MARK: - Cleanup View
+    
+    private var cleanupView: some View {
+        CleanupCandidatesView(category: .caches)
+    }
+}
+
+#Preview {
+    MainWindowView()
+        .frame(width: 1000, height: 700)
+}

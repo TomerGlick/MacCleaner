@@ -1,0 +1,546 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		APP001 /* MacStorageCleanupApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* MacStorageCleanupApp.swift */; };
+		APP002 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* MainWindowView.swift */; };
+		APP003 /* StorageHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* StorageHeaderView.swift */; };
+		APP004 /* StorageVisualizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* StorageVisualizationView.swift */; };
+		APP005 /* CategoryBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* CategoryBreakdownView.swift */; };
+		APP006 /* StorageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC006 /* StorageViewModel.swift */; };
+		APP007 /* StorageCategoryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC007 /* StorageCategoryData.swift */; };
+		APP008 /* CategoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC008 /* CategoryDetailView.swift */; };
+		APP009 /* StorageItemData.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC009 /* StorageItemData.swift */; };
+		APP010 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC010 /* ScanView.swift */; };
+		APP011 /* CleanupCandidateData.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC011 /* CleanupCandidateData.swift */; };
+		APP012 /* CleanupCandidatesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC012 /* CleanupCandidatesViewModel.swift */; };
+		APP013 /* CleanupCandidatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC013 /* CleanupCandidatesView.swift */; };
+		APP014 /* CleanupCategoriesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC014 /* CleanupCategoriesListView.swift */; };
+		APP015 /* CleanupPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC015 /* CleanupPreviewView.swift */; };
+		APP016 /* CleanupPreviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC016 /* CleanupPreviewViewModel.swift */; };
+		APP017 /* CleanupProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC017 /* CleanupProgressView.swift */; };
+		APP018 /* CleanupProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC018 /* CleanupProgressViewModel.swift */; };
+		APP019 /* CleanupResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC019 /* CleanupResultsView.swift */; };
+		APP020 /* CleanupResultsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC020 /* CleanupResultsViewModel.swift */; };
+		APP021 /* ApplicationsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC021 /* ApplicationsListView.swift */; };
+		APP022 /* ApplicationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC022 /* ApplicationsViewModel.swift */; };
+		APP023 /* ApplicationUninstallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC023 /* ApplicationUninstallView.swift */; };
+		APP024 /* ApplicationUninstallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC024 /* ApplicationUninstallViewModel.swift */; };
+		APP025 /* PreferencesWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC025 /* PreferencesWindow.swift */; };
+		APP026 /* PreferencesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC026 /* PreferencesViewModel.swift */; };
+		APP027 /* BackupManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC027 /* BackupManagementView.swift */; };
+		APP028 /* BackupManagementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC028 /* BackupManagementViewModel.swift */; };
+		APP029 /* ApplicationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC029 /* ApplicationCoordinator.swift */; };
+		APP030 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC030 /* NotificationService.swift */; };
+		APP031 /* LoggingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC031 /* LoggingService.swift */; };
+		APP032 /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC032 /* PreferencesService.swift */; };
+		F1FFAFD82F4A29A8005C6ACB /* FileBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */; };
+		F1FFAFDA2F4A29B7005C6ACB /* FileBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */; };
+		F1FFAFDC2F500F97005C6ACB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1FFAFDB2F500F97005C6ACB /* Assets.xcassets */; };
+		FWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = PKG001 /* MacStorageCleanupCore */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserViewModel.swift; sourceTree = "<group>"; };
+		F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserView.swift; sourceTree = "<group>"; };
+		F1FFAFDB2F500F97005C6ACB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		INFO001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		PRODUCT001 /* MacStorageCleanupApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacStorageCleanupApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		SRC001 /* MacStorageCleanupApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacStorageCleanupApp.swift; sourceTree = "<group>"; };
+		SRC002 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
+		SRC003 /* StorageHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageHeaderView.swift; sourceTree = "<group>"; };
+		SRC004 /* StorageVisualizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageVisualizationView.swift; sourceTree = "<group>"; };
+		SRC005 /* CategoryBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownView.swift; sourceTree = "<group>"; };
+		SRC006 /* StorageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageViewModel.swift; sourceTree = "<group>"; };
+		SRC007 /* StorageCategoryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageCategoryData.swift; sourceTree = "<group>"; };
+		SRC008 /* CategoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDetailView.swift; sourceTree = "<group>"; };
+		SRC009 /* StorageItemData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageItemData.swift; sourceTree = "<group>"; };
+		SRC010 /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
+		SRC011 /* CleanupCandidateData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidateData.swift; sourceTree = "<group>"; };
+		SRC012 /* CleanupCandidatesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidatesViewModel.swift; sourceTree = "<group>"; };
+		SRC013 /* CleanupCandidatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidatesView.swift; sourceTree = "<group>"; };
+		SRC014 /* CleanupCategoriesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCategoriesListView.swift; sourceTree = "<group>"; };
+		SRC015 /* CleanupPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPreviewView.swift; sourceTree = "<group>"; };
+		SRC016 /* CleanupPreviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPreviewViewModel.swift; sourceTree = "<group>"; };
+		SRC017 /* CleanupProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupProgressView.swift; sourceTree = "<group>"; };
+		SRC018 /* CleanupProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupProgressViewModel.swift; sourceTree = "<group>"; };
+		SRC019 /* CleanupResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupResultsView.swift; sourceTree = "<group>"; };
+		SRC020 /* CleanupResultsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupResultsViewModel.swift; sourceTree = "<group>"; };
+		SRC021 /* ApplicationsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationsListView.swift; sourceTree = "<group>"; };
+		SRC022 /* ApplicationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationsViewModel.swift; sourceTree = "<group>"; };
+		SRC023 /* ApplicationUninstallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationUninstallView.swift; sourceTree = "<group>"; };
+		SRC024 /* ApplicationUninstallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationUninstallViewModel.swift; sourceTree = "<group>"; };
+		SRC025 /* PreferencesWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesWindow.swift; sourceTree = "<group>"; };
+		SRC026 /* PreferencesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesViewModel.swift; sourceTree = "<group>"; };
+		SRC027 /* BackupManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManagementView.swift; sourceTree = "<group>"; };
+		SRC028 /* BackupManagementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManagementViewModel.swift; sourceTree = "<group>"; };
+		SRC029 /* ApplicationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationCoordinator.swift; sourceTree = "<group>"; };
+		SRC030 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		SRC031 /* LoggingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingService.swift; sourceTree = "<group>"; };
+		SRC032 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FRAMEWORKS001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FWK001 /* MacStorageCleanupCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		GROUP001 /* MacStorageCleanupApp */ = {
+			isa = PBXGroup;
+			children = (
+				F1FFAFDB2F500F97005C6ACB /* Assets.xcassets */,
+				SRC001 /* MacStorageCleanupApp.swift */,
+				GROUP003 /* Views */,
+				GROUP004 /* ViewModels */,
+				GROUP005 /* Models */,
+				GROUP006 /* Services */,
+				INFO001 /* Info.plist */,
+			);
+			path = MacStorageCleanupApp;
+			sourceTree = "<group>";
+		};
+		GROUP002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				PRODUCT001 /* MacStorageCleanupApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		GROUP003 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */,
+				SRC002 /* MainWindowView.swift */,
+				SRC003 /* StorageHeaderView.swift */,
+				SRC004 /* StorageVisualizationView.swift */,
+				SRC005 /* CategoryBreakdownView.swift */,
+				SRC008 /* CategoryDetailView.swift */,
+				SRC010 /* ScanView.swift */,
+				SRC013 /* CleanupCandidatesView.swift */,
+				SRC014 /* CleanupCategoriesListView.swift */,
+				SRC015 /* CleanupPreviewView.swift */,
+				SRC017 /* CleanupProgressView.swift */,
+				SRC019 /* CleanupResultsView.swift */,
+				SRC021 /* ApplicationsListView.swift */,
+				SRC023 /* ApplicationUninstallView.swift */,
+				SRC025 /* PreferencesWindow.swift */,
+				SRC027 /* BackupManagementView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		GROUP004 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */,
+				SRC006 /* StorageViewModel.swift */,
+				SRC012 /* CleanupCandidatesViewModel.swift */,
+				SRC016 /* CleanupPreviewViewModel.swift */,
+				SRC018 /* CleanupProgressViewModel.swift */,
+				SRC020 /* CleanupResultsViewModel.swift */,
+				SRC022 /* ApplicationsViewModel.swift */,
+				SRC024 /* ApplicationUninstallViewModel.swift */,
+				SRC026 /* PreferencesViewModel.swift */,
+				SRC028 /* BackupManagementViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		GROUP005 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				SRC007 /* StorageCategoryData.swift */,
+				SRC009 /* StorageItemData.swift */,
+				SRC011 /* CleanupCandidateData.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		GROUP006 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				SRC029 /* ApplicationCoordinator.swift */,
+				SRC030 /* NotificationService.swift */,
+				SRC031 /* LoggingService.swift */,
+				SRC032 /* PreferencesService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		ROOT = {
+			isa = PBXGroup;
+			children = (
+				GROUP001 /* MacStorageCleanupApp */,
+				GROUP002 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		TARGET001 /* MacStorageCleanupApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CONFIG001 /* Build configuration list for PBXNativeTarget "MacStorageCleanupApp" */;
+			buildPhases = (
+				PHASE001 /* Sources */,
+				FRAMEWORKS001 /* Frameworks */,
+				PHASE002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacStorageCleanupApp;
+			packageProductDependencies = (
+				PKG001 /* MacStorageCleanupCore */,
+			);
+			productName = MacStorageCleanupApp;
+			productReference = PRODUCT001 /* MacStorageCleanupApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		PROJECT001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 2610;
+			};
+			buildConfigurationList = CONFIG002 /* Build configuration list for PBXProject "MacStorageCleanupApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = ROOT;
+			packageReferences = (
+				PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */,
+			);
+			productRefGroup = GROUP002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				TARGET001 /* MacStorageCleanupApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		PHASE002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1FFAFDC2F500F97005C6ACB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		PHASE001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				APP001 /* MacStorageCleanupApp.swift in Sources */,
+				APP002 /* MainWindowView.swift in Sources */,
+				APP003 /* StorageHeaderView.swift in Sources */,
+				APP004 /* StorageVisualizationView.swift in Sources */,
+				APP005 /* CategoryBreakdownView.swift in Sources */,
+				APP006 /* StorageViewModel.swift in Sources */,
+				APP007 /* StorageCategoryData.swift in Sources */,
+				APP008 /* CategoryDetailView.swift in Sources */,
+				APP009 /* StorageItemData.swift in Sources */,
+				APP010 /* ScanView.swift in Sources */,
+				APP011 /* CleanupCandidateData.swift in Sources */,
+				APP012 /* CleanupCandidatesViewModel.swift in Sources */,
+				APP013 /* CleanupCandidatesView.swift in Sources */,
+				APP014 /* CleanupCategoriesListView.swift in Sources */,
+				APP015 /* CleanupPreviewView.swift in Sources */,
+				APP016 /* CleanupPreviewViewModel.swift in Sources */,
+				F1FFAFD82F4A29A8005C6ACB /* FileBrowserViewModel.swift in Sources */,
+				APP017 /* CleanupProgressView.swift in Sources */,
+				APP018 /* CleanupProgressViewModel.swift in Sources */,
+				APP019 /* CleanupResultsView.swift in Sources */,
+				APP020 /* CleanupResultsViewModel.swift in Sources */,
+				APP021 /* ApplicationsListView.swift in Sources */,
+				APP022 /* ApplicationsViewModel.swift in Sources */,
+				APP023 /* ApplicationUninstallView.swift in Sources */,
+				APP024 /* ApplicationUninstallViewModel.swift in Sources */,
+				APP025 /* PreferencesWindow.swift in Sources */,
+				APP026 /* PreferencesViewModel.swift in Sources */,
+				APP027 /* BackupManagementView.swift in Sources */,
+				APP028 /* BackupManagementViewModel.swift in Sources */,
+				F1FFAFDA2F4A29B7005C6ACB /* FileBrowserView.swift in Sources */,
+				APP029 /* ApplicationCoordinator.swift in Sources */,
+				APP030 /* NotificationService.swift in Sources */,
+				APP031 /* LoggingService.swift in Sources */,
+				APP032 /* PreferencesService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DEBUG001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		DEBUG002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MacStorageCleanupApp/MacStorageCleanupApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = D27PA9832J;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MacStorageCleanupApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mac Cleaner";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.maccleaner;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		RELEASE001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		RELEASE002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MacStorageCleanupApp/MacStorageCleanupApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = D27PA9832J;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MacStorageCleanupApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mac Cleaner";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.maccleaner;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CONFIG001 /* Build configuration list for PBXNativeTarget "MacStorageCleanupApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEBUG002 /* Debug */,
+				RELEASE002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CONFIG002 /* Build configuration list for PBXProject "MacStorageCleanupApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEBUG001 /* Debug */,
+				RELEASE001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = MacStorageCleanup;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		PKG001 /* MacStorageCleanupCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */;
+			productName = MacStorageCleanupCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = PROJECT001 /* Project object */;
+}
