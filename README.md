@@ -50,7 +50,14 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 
 ## 📸 Screenshots
 
-*Coming soon*
+### Main Window - Storage Analysis
+![Storage Analysis](screenshots/main-window.png)
+
+### Cleanup Candidates
+![Cleanup Candidates](screenshots/cleanup-candidates.png)
+
+### Cleanup in Progress
+![Cleanup Progress](screenshots/cleanup-progress.png)
 
 ## 🚀 Installation
 
