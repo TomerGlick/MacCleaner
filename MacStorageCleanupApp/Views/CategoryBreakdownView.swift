@@ -44,6 +44,13 @@ struct CategoryRowView: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
+                    if category.isDeletable {
+                        Image(systemName: "trash")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                            .help("Can be cleaned")
+                    }
+                    
                     Spacer()
                     
                     Image(systemName: "chevron.right")

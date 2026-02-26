@@ -175,10 +175,14 @@ public final class DefaultCleanupEngine: CleanupEngine {
         // Validate files before cleanup
         let validation = validateCleanup(files: files)
         
+        print("DEBUG: Validation - blocked files: \(validation.blockedFiles.count)")
+        
         // Filter out blocked files
         let filesToClean = files.filter { file in
             !validation.blockedFiles.contains(file)
         }
+        
+        print("DEBUG: Files to clean after filtering: \(filesToClean.count)")
         
         var backupLocation: URL?
         var deletedFiles: [URL] = []  // Track deleted files for rollback
@@ -211,7 +215,10 @@ public final class DefaultCleanupEngine: CleanupEngine {
         }
         
         // Process each file with atomic operations
+        print("DEBUG: Starting to process \(filesToClean.count) files")
         for (index, file) in filesToClean.enumerated() {
+            print("DEBUG: Processing file \(index + 1)/\(filesToClean.count): \(file.url.path)")
+            
             // Check for cancellation
             let cancelled = cancelQueue.sync { isCancelled }
             if cancelled {
@@ -221,8 +228,10 @@ public final class DefaultCleanupEngine: CleanupEngine {
                 break
             }
             
-            // Skip files that are in use if option is set
-            if options.skipInUseFiles && isFileInUse(url: file.url) {
+            // Skip files that are in use if option is set (but not for simulator runtimes)
+            let isSimulatorRuntime = file.url.path.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") && file.url.path.hasSuffix(".asset")
+            
+            if options.skipInUseFiles && !isSimulatorRuntime && isFileInUse(url: file.url) {
                 errors.append(.fileInUse(path: file.url.path))
                 
                 // Report progress
@@ -237,31 +246,43 @@ public final class DefaultCleanupEngine: CleanupEngine {
             
             // Attempt to delete the file
             do {
-                if options.moveToTrash {
+                print("DEBUG: Attempting to delete: \(file.url.path)")
+                print("DEBUG: Contains AssetsV2: \(file.url.path.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime"))")
+                print("DEBUG: Ends with .asset: \(file.url.path.hasSuffix(".asset"))")
+                
+                // Special handling for simulator runtime assets
+                if file.url.path.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") && file.url.path.hasSuffix(".asset") {
+                    print("DEBUG: Using xcrun simctl runtime delete")
+                    try deleteSimulatorRuntime(at: file.url)
+                } else if options.moveToTrash {
+                    print("DEBUG: Moving to trash")
                     try moveToTrash(url: file.url)
                 } else {
+                    print("DEBUG: Removing item directly")
                     try fileManager.removeItem(at: file.url)
                 }
+                
+                print("DEBUG: Successfully deleted: \(file.url.path)")
                 
                 // Track successful deletion for potential rollback
                 deletedFiles.append(file.url)
                 filesRemoved += 1
                 spaceFreed += file.size
             } catch {
-                // On error, rollback all deletions
-                await rollbackDeletions(deletedFiles: deletedFiles, backupLocation: backupLocation)
+                print("ERROR: Failed to delete \(file.url.path): \(error)")
                 
                 // Convert error to CleanupError
                 let cleanupError = convertToCleanupError(error: error, path: file.url.path)
                 errors.append(cleanupError)
                 
-                // Return partial result with rollback information
-                return CleanupResult(
-                    filesRemoved: 0,  // All rolled back
-                    spaceFreed: 0,
-                    errors: errors,
-                    backupLocation: backupLocation
-                )
+                // Don't rollback for individual file failures, just continue
+                progressHandler(CleanupProgress(
+                    currentFile: file.url.lastPathComponent,
+                    filesProcessed: index + 1,
+                    totalFiles: filesToClean.count,
+                    spaceFreed: spaceFreed
+                ))
+                continue
             }
             
             // Report progress
@@ -474,6 +495,47 @@ public final class DefaultCleanupEngine: CleanupEngine {
                 }
             }
             throw CleanupError.unknown(error.localizedDescription)
+        }
+    }
+    
+    /// Delete simulator runtime using xcrun simctl
+    private func deleteSimulatorRuntime(at url: URL) throws {
+        // Read the Build identifier from Info.plist
+        let plistPath = url.appendingPathComponent("Info.plist").path
+        
+        guard fileManager.fileExists(atPath: plistPath),
+              let plistData = fileManager.contents(atPath: plistPath),
+              let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+              let mobileAssetProps = plist["MobileAssetProperties"] as? [String: Any],
+              let build = mobileAssetProps["Build"] as? String else {
+            throw CleanupError.unknown("Could not read Build identifier from runtime plist")
+        }
+        
+        print("DEBUG: Deleting simulator runtime with build: \(build)")
+        
+        // Execute xcrun simctl runtime delete
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        process.arguments = ["simctl", "runtime", "delete", build]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            if process.terminationStatus != 0 {
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? "Unknown error"
+                print("ERROR: xcrun simctl runtime delete failed: \(output)")
+                throw CleanupError.unknown("Failed to delete simulator runtime: \(output)")
+            }
+            
+            print("DEBUG: Successfully deleted simulator runtime: \(build)")
+        } catch {
+            throw CleanupError.unknown("Failed to execute xcrun simctl: \(error.localizedDescription)")
         }
     }
     

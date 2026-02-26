@@ -8,6 +8,8 @@ class CleanupCandidatesViewModel: ObservableObject {
     @Published var filteredCandidates: [CleanupCandidateData] = []
     @Published var selectedCategory: CleanupCandidateData.CleanupCategoryType
     @Published var isLoading = false
+    @Published var loadingProgress: Double = 0.0
+    @Published var loadingMessage: String = ""
     
     // Filtering options
     @Published var searchText: String = "" {
@@ -93,17 +95,27 @@ class CleanupCandidatesViewModel: ObservableObject {
         switch selectedCategory {
         case .caches:
             print("DEBUG: Loading caches...")
-            // Load system and application caches
-            async let systemCaches = coordinator.cacheManager.findSystemCaches()
-            async let appCaches = coordinator.cacheManager.findApplicationCaches()
-            async let browserCaches = coordinator.cacheManager.findBrowserCaches()
-            async let developerCaches = coordinator.cacheManager.findDeveloperCaches()
-            async let aiAgentCaches = coordinator.cacheManager.findAIAgentCaches()
             
-            // Wait for all results
-            let (systemResults, appResults, browserResults, devResults, aiResults) = await (
-                systemCaches, appCaches, browserCaches, developerCaches, aiAgentCaches
-            )
+            // Update progress as we scan
+            loadingMessage = "Scanning system caches..."
+            loadingProgress = 0.1
+            let systemResults = await coordinator.cacheManager.findSystemCaches()
+            
+            loadingMessage = "Scanning application caches..."
+            loadingProgress = 0.3
+            let appResults = await coordinator.cacheManager.findApplicationCaches()
+            
+            loadingMessage = "Scanning browser caches..."
+            loadingProgress = 0.5
+            let browserResults = await coordinator.cacheManager.findBrowserCaches()
+            
+            loadingMessage = "Scanning developer caches..."
+            loadingProgress = 0.7
+            let devResults = await coordinator.cacheManager.findDeveloperCaches()
+            
+            loadingMessage = "Scanning AI agent caches..."
+            loadingProgress = 0.9
+            let aiResults = await coordinator.cacheManager.findAIAgentCaches()
             
             print("DEBUG: System caches found: \(systemResults.count)")
             print("DEBUG: App caches found: \(appResults.count)")

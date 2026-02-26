@@ -37,6 +37,11 @@ public final class DefaultSafeListManager: SafeListManager {
         // Expand tilde in path for user directory
         let expandedPath = (path as NSString).expandingTildeInPath
         
+        // Allow deletion of simulator runtime assets (they use xcrun simctl)
+        if expandedPath.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") && expandedPath.hasSuffix(".asset") {
+            return false
+        }
+        
         // Check protected system paths
         for protectedPath in protectedPaths {
             if expandedPath.hasPrefix(protectedPath) {

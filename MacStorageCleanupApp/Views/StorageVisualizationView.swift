@@ -23,7 +23,7 @@ struct StorageVisualizationView: View {
                             innerRadius: .ratio(0.5),
                             angularInset: 2
                         )
-                        .foregroundStyle(by: .value("Category", category.name))
+                        .foregroundStyle(category.color)
                         .cornerRadius(4)
                         .opacity(selectedCategoryName == nil || selectedCategoryName == category.name ? 1.0 : 0.5)
                     }
@@ -44,7 +44,7 @@ struct StorageVisualizationView: View {
                             x: .value("Size", category.size),
                             y: .value("Category", category.name)
                         )
-                        .foregroundStyle(by: .value("Category", category.name))
+                        .foregroundStyle(category.color)
                         .cornerRadius(4)
                     }
                     .chartXAxis {

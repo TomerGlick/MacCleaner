@@ -2,15 +2,18 @@ import SwiftUI
 
 struct CleanupCandidatesView: View {
     @StateObject private var viewModel: CleanupCandidatesViewModel
+    @ObservedObject var storageViewModel: StorageViewModel
     @State private var showingFilters = false
     @State private var showingPreview = false
     
-    init(category: CleanupCandidateData.CleanupCategoryType) {
+    init(category: CleanupCandidateData.CleanupCategoryType, storageViewModel: StorageViewModel) {
         _viewModel = StateObject(wrappedValue: CleanupCandidatesViewModel(category: category))
+        self.storageViewModel = storageViewModel
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationStack {
+            VStack(spacing: 0) {
             // Header
             headerView
             
@@ -34,6 +37,7 @@ struct CleanupCandidatesView: View {
             
             // Footer with selection summary
             footerView
+            }
         }
         .task {
             print("DEBUG: CleanupCandidatesView task started")
@@ -132,10 +136,20 @@ struct CleanupCandidatesView: View {
         ScrollView {
             LazyVStack(spacing: 1) {
                 ForEach(viewModel.filteredCandidates) { candidate in
-                    CleanupCandidateRowView(
-                        candidate: candidate,
-                        onToggle: { viewModel.toggleSelection(for: candidate) }
-                    )
+                    HStack(spacing: 0) {
+                        CleanupCandidateRowView(
+                            candidate: candidate,
+                            onToggle: { viewModel.toggleSelection(for: candidate) }
+                        )
+                        
+                        // Drill-down button
+                        NavigationLink(destination: CandidateDetailView(candidate: candidate, viewModel: viewModel)) {
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 12)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
         }
@@ -166,18 +180,46 @@ struct CleanupCandidatesView: View {
     
     private var loadingView: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.5)
+            RotatingMagnifierView()
             
-            Text("Scanning for caches...")
+            ProgressView(value: viewModel.loadingProgress, total: 1.0)
+                .progressViewStyle(.linear)
+                .frame(width: 300)
+            
+            Text(viewModel.loadingMessage.isEmpty ? "Scanning for caches..." : viewModel.loadingMessage)
                 .font(.headline)
                 .foregroundColor(.secondary)
+            
+            Text("\(Int(viewModel.loadingProgress * 100))%")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .monospacedDigit()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
+}
+
+struct RotatingMagnifierView: View {
+    @State private var isRotating = false
     
-    private var footerView: some View {
+    var body: some View {
+        Image(systemName: "magnifyingglass")
+            .font(.system(size: 24))
+            .foregroundColor(.blue)
+            .offset(y: -30)
+            .rotationEffect(.degrees(isRotating ? 360 : 0), anchor: .center)
+            .rotationEffect(.degrees(isRotating ? -360 : 0))
+            .onAppear {
+                withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
+                    isRotating = true
+                }
+            }
+    }
+}
+
+private extension CleanupCandidatesView {
+    var footerView: some View {
         HStack {
             if viewModel.selectedCount > 0 {
                 HStack(spacing: 8) {
@@ -210,6 +252,10 @@ struct CleanupCandidatesView: View {
                 CleanupPreviewView(selectedFiles: viewModel.selectedFiles) { cleanedPaths in
                     // Remove cleaned files from list instantly
                     viewModel.removeCleanedFiles(cleanedPaths)
+                    // Refresh disk space
+                    Task {
+                        await storageViewModel.refreshDiskSpace()
+                    }
                 }
             }
         }
@@ -222,39 +268,41 @@ struct CleanupCandidateRowView: View {
     let onToggle: () -> Void
     
     var body: some View {
-        Button(action: onToggle) {
-            HStack(spacing: 12) {
-                // Checkbox
+        HStack(spacing: 12) {
+            // Checkbox - separate button
+            Button(action: onToggle) {
                 Image(systemName: candidate.isSelected ? "checkmark.square.fill" : "square")
                     .font(.title3)
                     .foregroundColor(candidate.isSelected ? .blue : .secondary)
                     .frame(width: 20)
+            }
+            .buttonStyle(.plain)
+            
+            // File icon
+            Image(systemName: candidate.fileType.iconName)
+                .font(.title3)
+                .foregroundColor(.blue)
+                .frame(width: 24)
+            
+            // File info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(candidate.name)
+                    .font(.subheadline)
+                    .lineLimit(1)
                 
-                // File icon
-                Image(systemName: candidate.fileType.iconName)
-                    .font(.title3)
-                    .foregroundColor(.blue)
-                    .frame(width: 24)
-                
-                // File info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(candidate.name)
-                        .font(.subheadline)
-                        .lineLimit(1)
-                    
-                    Text(candidate.path)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-                
-                Spacer()
-                
-                // Metadata
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(candidate.formattedSize)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                Text(candidate.path)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            
+            Spacer()
+            
+            // Metadata
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(candidate.formattedSize)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                     
                     Text(candidate.relativeAccessedDate)
                         .font(.caption)
@@ -275,9 +323,17 @@ struct CleanupCandidateRowView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(candidate.isSelected ? Color.blue.opacity(0.05) : Color.clear)
-        }
-        .buttonStyle(.plain)
-        .background(Color(NSColor.controlBackgroundColor))
+            .background(Color(NSColor.controlBackgroundColor))
+            .help("\(candidate.name)\n\nPath: \(candidate.path)\nSize: \(candidate.formattedSize)")
+            .contextMenu {
+                Button(action: { showInFinder(path: candidate.path) }) {
+                    Label("Show in Finder", systemImage: "folder")
+                }
+            }
+    }
+    
+    private func showInFinder(path: String) {
+        NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: "")
     }
 }
 
@@ -370,6 +426,6 @@ struct FilterPopoverView: View {
 }
 
 #Preview {
-    CleanupCandidatesView(category: .caches)
+    CleanupCandidatesView(category: .caches, storageViewModel: StorageViewModel())
         .frame(width: 800, height: 600)
 }

@@ -55,7 +55,12 @@ class StorageViewModel: ObservableObject {
     
     func loadStorageData() async {
         isLoading = true
-        
+        await refreshDiskSpace()
+        await calculateCategoryBreakdown()
+        isLoading = false
+    }
+    
+    func refreshDiskSpace() async {
         // Get disk space information
         if let volumeURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             do {
@@ -74,11 +79,6 @@ class StorageViewModel: ObservableObject {
                 print("Error getting volume information: \(error)")
             }
         }
-        
-        // Calculate storage by category
-        await calculateCategoryBreakdown()
-        
-        isLoading = false
     }
     
     private func calculateCategoryBreakdown() async {
@@ -87,14 +87,47 @@ class StorageViewModel: ObservableObject {
         async let userApplicationsSize = calculateDirectorySize(path: NSHomeDirectory() + "/Applications")
         async let documentsSize = calculateDirectorySize(path: NSHomeDirectory() + "/Documents")
         async let cachesSize = calculateDirectorySize(path: NSHomeDirectory() + "/Library/Caches")
+        async let logsSize = calculateDirectorySize(path: NSHomeDirectory() + "/Library/Logs")
+        async let downloadsSize = calculateDirectorySize(path: NSHomeDirectory() + "/Downloads")
+        async let desktopSize = calculateDirectorySize(path: NSHomeDirectory() + "/Desktop")
+        async let picturesSize = calculateDirectorySize(path: NSHomeDirectory() + "/Pictures")
+        async let moviesSize = calculateDirectorySize(path: NSHomeDirectory() + "/Movies")
+        async let musicSize = calculateDirectorySize(path: NSHomeDirectory() + "/Music")
+        
+        // Additional large directories that are often missed
+        async let librarySize = calculateDirectorySize(path: NSHomeDirectory() + "/Library")
+        async let virtualMachinesSize = calculateDirectorySize(path: NSHomeDirectory() + "/.Trash")
         
         // Wait for all calculations to complete
-        let (apps, userApps, docs, caches) = await (applicationsSize, userApplicationsSize, documentsSize, cachesSize)
+        let (apps, userApps, docs, caches, logs, downloads, desktop, pictures, movies, music, library, trash) = await (
+            applicationsSize, userApplicationsSize, documentsSize, cachesSize, logsSize, 
+            downloadsSize, desktopSize, picturesSize, moviesSize, musicSize, librarySize, virtualMachinesSize
+        )
         let totalApplicationsSize = apps + userApps
         
-        // System (estimated as remaining space)
-        let accountedSize = totalApplicationsSize + docs + caches
+        // Library contains caches and logs, so subtract those to avoid double counting
+        let otherLibrarySize = max(0, library - caches - logs)
+        
+        print("DEBUG Storage Breakdown:")
+        print("  Total Used: \(ByteCountFormatter.string(fromByteCount: usedSpace, countStyle: .file))")
+        print("  Applications: \(ByteCountFormatter.string(fromByteCount: totalApplicationsSize, countStyle: .file))")
+        print("  Documents: \(ByteCountFormatter.string(fromByteCount: docs, countStyle: .file))")
+        print("  Desktop: \(ByteCountFormatter.string(fromByteCount: desktop, countStyle: .file))")
+        print("  Downloads: \(ByteCountFormatter.string(fromByteCount: downloads, countStyle: .file))")
+        print("  Pictures: \(ByteCountFormatter.string(fromByteCount: pictures, countStyle: .file))")
+        print("  Movies: \(ByteCountFormatter.string(fromByteCount: movies, countStyle: .file))")
+        print("  Music: \(ByteCountFormatter.string(fromByteCount: music, countStyle: .file))")
+        print("  Caches: \(ByteCountFormatter.string(fromByteCount: caches, countStyle: .file))")
+        print("  Logs: \(ByteCountFormatter.string(fromByteCount: logs, countStyle: .file))")
+        print("  Other Library Data: \(ByteCountFormatter.string(fromByteCount: otherLibrarySize, countStyle: .file))")
+        print("  Trash: \(ByteCountFormatter.string(fromByteCount: trash, countStyle: .file))")
+        
+        // System (estimated as remaining space after accounting for user data)
+        let accountedSize = totalApplicationsSize + docs + caches + logs + downloads + desktop + pictures + movies + music + otherLibrarySize + trash
         let systemSize = max(0, usedSpace - accountedSize)
+        
+        print("  Accounted: \(ByteCountFormatter.string(fromByteCount: accountedSize, countStyle: .file))")
+        print("  System (remainder): \(ByteCountFormatter.string(fromByteCount: systemSize, countStyle: .file))")
         
         var categories: [StorageCategoryData] = []
         
@@ -117,12 +150,49 @@ class StorageViewModel: ObservableObject {
             ))
         }
         
-        if systemSize > 0 {
+        if desktop > 0 {
             categories.append(StorageCategoryData(
-                name: "System",
-                size: systemSize,
+                name: "Desktop",
+                size: desktop,
                 totalCapacity: totalCapacity,
-                color: .gray
+                color: .cyan
+            ))
+        }
+        
+        if pictures > 0 {
+            categories.append(StorageCategoryData(
+                name: "Pictures",
+                size: pictures,
+                totalCapacity: totalCapacity,
+                color: .pink
+            ))
+        }
+        
+        if movies > 0 {
+            categories.append(StorageCategoryData(
+                name: "Movies",
+                size: movies,
+                totalCapacity: totalCapacity,
+                color: .red
+            ))
+        }
+        
+        if music > 0 {
+            categories.append(StorageCategoryData(
+                name: "Music",
+                size: music,
+                totalCapacity: totalCapacity,
+                color: .indigo
+            ))
+        }
+        
+        if downloads > 0 {
+            categories.append(StorageCategoryData(
+                name: "Downloads",
+                size: downloads,
+                totalCapacity: totalCapacity,
+                color: .purple,
+                isDeletable: true
             ))
         }
         
@@ -131,7 +201,47 @@ class StorageViewModel: ObservableObject {
                 name: "Caches",
                 size: caches,
                 totalCapacity: totalCapacity,
-                color: .orange
+                color: .orange,
+                isDeletable: true
+            ))
+        }
+        
+        if logs > 0 {
+            categories.append(StorageCategoryData(
+                name: "Logs",
+                size: logs,
+                totalCapacity: totalCapacity,
+                color: .yellow,
+                isDeletable: true
+            ))
+        }
+        
+        if otherLibrarySize > 1_000_000_000 { // Only show if > 1GB
+            categories.append(StorageCategoryData(
+                name: "App Data",
+                size: otherLibrarySize,
+                totalCapacity: totalCapacity,
+                color: .teal
+            ))
+        }
+        
+        if trash > 1_000_000_000 { // Only show if > 1GB
+            categories.append(StorageCategoryData(
+                name: "Trash",
+                size: trash,
+                totalCapacity: totalCapacity,
+                color: .brown,
+                isDeletable: true
+            ))
+        }
+        
+        if systemSize > 0 {
+            categories.append(StorageCategoryData(
+                name: "System",
+                size: systemSize,
+                totalCapacity: totalCapacity,
+                color: .gray,
+                isDeletable: false
             ))
         }
         
@@ -147,14 +257,23 @@ class StorageViewModel: ObservableObject {
             
             var totalSize: Int64 = 0
             
-            if let enumerator = fileManager.enumerator(atPath: path) {
-                let allFiles = enumerator.allObjects as? [String] ?? []
-                for file in allFiles {
-                    let filePath = (path as NSString).appendingPathComponent(file)
-                    if let attributes = try? fileManager.attributesOfItem(atPath: filePath),
-                       let fileSize = attributes[.size] as? Int64 {
-                        totalSize += fileSize
-                    }
+            // Use URL-based enumerator for better memory efficiency
+            guard let enumerator = fileManager.enumerator(
+                at: URL(fileURLWithPath: path),
+                includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                return 0
+            }
+            
+            // Process files one at a time instead of loading all into memory
+            for case let fileURL as URL in enumerator {
+                // Check if it's a regular file (not a directory)
+                if let resourceValues = try? fileURL.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey]),
+                   let isDirectory = resourceValues.isDirectory,
+                   !isDirectory,
+                   let fileSize = resourceValues.fileSize {
+                    totalSize += Int64(fileSize)
                 }
             }
             
@@ -186,8 +305,13 @@ class StorageViewModel: ObservableObject {
     }
     
     private func loadCategoryDetails(for category: StorageCategoryData) async {
+        print("DEBUG: Loading details for category: \(category.name)")
+        
         // Find the category in our data and update it with details
-        guard let index = categoryData.firstIndex(where: { $0.id == category.id }) else { return }
+        guard let index = categoryData.firstIndex(where: { $0.id == category.id }) else {
+            print("DEBUG: Category not found in categoryData")
+            return
+        }
         
         var updatedCategory = categoryData[index]
         
@@ -197,13 +321,31 @@ class StorageViewModel: ObservableObject {
             updatedCategory = await loadApplicationsDetails(category: updatedCategory)
         case "Documents":
             updatedCategory = await loadDocumentsDetails(category: updatedCategory)
+        case "Desktop":
+            updatedCategory = await loadDesktopDetails(category: updatedCategory)
+        case "Pictures":
+            updatedCategory = await loadPicturesDetails(category: updatedCategory)
+        case "Movies":
+            updatedCategory = await loadMoviesDetails(category: updatedCategory)
+        case "Music":
+            updatedCategory = await loadMusicDetails(category: updatedCategory)
+        case "Downloads":
+            updatedCategory = await loadDownloadsDetails(category: updatedCategory)
         case "Caches":
             updatedCategory = await loadCachesDetails(category: updatedCategory)
+        case "Logs":
+            updatedCategory = await loadLogsDetails(category: updatedCategory)
+        case "App Data":
+            updatedCategory = await loadAppDataDetails(category: updatedCategory)
+        case "Trash":
+            updatedCategory = await loadTrashDetails(category: updatedCategory)
         case "System":
             updatedCategory = await loadSystemDetails(category: updatedCategory)
         default:
             break
         }
+        
+        print("DEBUG: Loaded \(updatedCategory.subcategories.count) subcategories and \(updatedCategory.items.count) items")
         
         categoryData[index] = updatedCategory
         
@@ -212,6 +354,7 @@ class StorageViewModel: ObservableObject {
             navigationPath[navIndex] = updatedCategory
             if navIndex == navigationPath.count - 1 {
                 selectedCategory = updatedCategory
+                print("DEBUG: Updated selectedCategory with details")
             }
         }
     }
@@ -249,6 +392,69 @@ class StorageViewModel: ObservableObject {
         return updated
     }
     
+    private func loadDownloadsDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        
+        let downloadsPath = NSHomeDirectory() + "/Downloads"
+        
+        // Get top files and folders
+        updated.items = await getTopItemsInDirectory(path: downloadsPath, limit: 20)
+        
+        return updated
+    }
+    
+    private func loadLogsDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        
+        let logsPath = NSHomeDirectory() + "/Library/Logs"
+        
+        // Get top log files and folders
+        updated.items = await getTopItemsInDirectory(path: logsPath, limit: 20)
+        
+        return updated
+    }
+    
+    private func loadDesktopDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        updated.items = await getTopItemsInDirectory(path: NSHomeDirectory() + "/Desktop", limit: 20)
+        return updated
+    }
+    
+    private func loadPicturesDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        updated.items = await getTopItemsInDirectory(path: NSHomeDirectory() + "/Pictures", limit: 20)
+        return updated
+    }
+    
+    private func loadMoviesDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        updated.items = await getTopItemsInDirectory(path: NSHomeDirectory() + "/Movies", limit: 20)
+        return updated
+    }
+    
+    private func loadMusicDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        updated.items = await getTopItemsInDirectory(path: NSHomeDirectory() + "/Music", limit: 20)
+        return updated
+    }
+    
+    private func loadAppDataDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        // Show top items in Library (excluding Caches and Logs which are separate)
+        let libraryPath = NSHomeDirectory() + "/Library"
+        var items = await getTopItemsInDirectory(path: libraryPath, limit: 30)
+        // Filter out Caches and Logs
+        items = items.filter { !$0.name.contains("Caches") && !$0.name.contains("Logs") }
+        updated.items = Array(items.prefix(20))
+        return updated
+    }
+    
+    private func loadTrashDetails(category: StorageCategoryData) async -> StorageCategoryData {
+        var updated = category
+        updated.items = await getTopItemsInDirectory(path: NSHomeDirectory() + "/.Trash", limit: 20)
+        return updated
+    }
+    
     private func loadCachesDetails(category: StorageCategoryData) async -> StorageCategoryData {
         var updated = category
         
@@ -282,10 +488,65 @@ class StorageViewModel: ObservableObject {
     }
     
     private func loadSystemDetails(category: StorageCategoryData) async -> StorageCategoryData {
-        let updated = category
+        var updated = category
         
-        // System is complex, just show a message that it's managed by macOS
-        // We don't drill down into system files for safety
+        // Show breakdown of what's in "System" - inspired by osx_cleaner approach
+        var subcategories: [StorageCategoryData] = []
+        
+        // Calculate sizes of major system components
+        async let systemOS = calculateDirectorySize(path: "/System")
+        async let systemLibrary = calculateDirectorySize(path: "/Library")
+        async let userLibrarySize = calculateDirectorySize(path: NSHomeDirectory() + "/Library")
+        async let privateVar = calculateDirectorySize(path: "/private/var")
+        async let coreServices = calculateDirectorySize(path: "/System/Library/CoreServices")
+        
+        let (sysOS, sysLib, userLib, privVar, coreSvc) = await (systemOS, systemLibrary, userLibrarySize, privateVar, coreServices)
+        
+        // macOS System Files (read-only, cannot delete)
+        if sysOS > 0 {
+            subcategories.append(StorageCategoryData(
+                name: "macOS System",
+                size: sysOS,
+                totalCapacity: totalCapacity,
+                color: .gray,
+                isDeletable: false
+            ))
+        }
+        
+        // System Library (shared frameworks, cannot delete)
+        if sysLib > 0 {
+            subcategories.append(StorageCategoryData(
+                name: "System Library",
+                size: sysLib,
+                totalCapacity: totalCapacity,
+                color: .gray,
+                isDeletable: false
+            ))
+        }
+        
+        // User Library (app support, preferences - mostly safe but complex)
+        if userLib > 0 {
+            subcategories.append(StorageCategoryData(
+                name: "User Library",
+                size: userLib,
+                totalCapacity: totalCapacity,
+                color: .orange,
+                isDeletable: false
+            ))
+        }
+        
+        // System Data (/private/var - logs, temp files, some deletable)
+        if privVar > 0 {
+            subcategories.append(StorageCategoryData(
+                name: "System Data",
+                size: privVar,
+                totalCapacity: totalCapacity,
+                color: .yellow,
+                isDeletable: false
+            ))
+        }
+        
+        updated.subcategories = subcategories.sorted { $0.size > $1.size }
         
         return updated
     }

@@ -20,27 +20,45 @@ struct MainWindowView: View {
     
     var body: some View {
         NavigationSplitView {
-            // Sidebar
-            List(selection: $selectedTab) {
-                Section("Overview") {
-                    Label("Storage", systemImage: "internaldrive")
-                        .tag(MainTab.storage)
-                    
-                    Label("Files", systemImage: "folder")
-                        .tag(MainTab.files)
+            // Sidebar with app title
+            VStack(spacing: 0) {
+                // App title header
+                HStack {
+                    Image(systemName: "internaldrive.fill")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                    Text("Mac Storage Cleanup")
+                        .font(.headline)
+                        .fontWeight(.semibold)
                 }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(NSColor.controlBackgroundColor))
                 
-                Section("Cleanup") {
-                    Label("Cleanup Candidates", systemImage: "trash")
-                        .tag(MainTab.cleanup)
-                }
+                Divider()
                 
-                Section("Management") {
-                    Label("Applications", systemImage: "app")
-                        .tag(MainTab.applications)
+                // Sidebar list
+                List(selection: $selectedTab) {
+                    Section("Overview") {
+                        Label("Storage", systemImage: "internaldrive")
+                            .tag(MainTab.storage)
+                        
+                        Label("Files", systemImage: "folder")
+                            .tag(MainTab.files)
+                    }
                     
-                    Label("Backups", systemImage: "archivebox")
-                        .tag(MainTab.backups)
+                    Section("Cleanup") {
+                        Label("Cleanup Candidates", systemImage: "trash")
+                            .tag(MainTab.cleanup)
+                    }
+                    
+                    Section("Management") {
+                        Label("Applications", systemImage: "app")
+                            .tag(MainTab.applications)
+                        
+                        Label("Backups", systemImage: "archivebox")
+                            .tag(MainTab.backups)
+                    }
                 }
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 250)
@@ -137,6 +155,11 @@ struct MainWindowView: View {
                         .transition(.move(edge: .trailing))
                 }
             }
+            
+            Divider()
+            
+            // Bottom disk space bar
+            DiskSpaceBar(viewModel: viewModel)
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.selectedCategory?.id)
     }
@@ -144,7 +167,7 @@ struct MainWindowView: View {
     // MARK: - Cleanup View
     
     private var cleanupView: some View {
-        CleanupCandidatesView(category: .caches)
+        CleanupCandidatesView(category: .caches, storageViewModel: viewModel)
     }
 }
 

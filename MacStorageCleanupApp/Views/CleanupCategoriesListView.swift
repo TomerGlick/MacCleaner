@@ -4,6 +4,7 @@ import SwiftUI
 struct CleanupCategoriesListView: View {
     @State private var selectedCategory: CleanupCandidateData.CleanupCategoryType?
     @State private var showingCleanupView = false
+    @StateObject private var storageViewModel = StorageViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -33,7 +34,7 @@ struct CleanupCategoriesListView: View {
         }
         .sheet(isPresented: $showingCleanupView) {
             if let category = selectedCategory {
-                CleanupCandidatesView(category: category)
+                CleanupCandidatesView(category: category, storageViewModel: storageViewModel)
                     .frame(minWidth: 800, minHeight: 600)
             }
         }

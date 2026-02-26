@@ -3,10 +3,12 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS-blue.svg" alt="Platform">
   <img src="https://img.shields.io/badge/swift-5.9-orange.svg" alt="Swift">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/license-BSD--3--Clause-green.svg" alt="License">
 </p>
 
 A powerful, native macOS application to clean up your Mac and free up storage space. Built with SwiftUI and designed with safety and user control in mind.
+
+> ⚠️ **USE AT YOUR OWN RISK**: This application deletes files from your system. While it includes safety features and protections, always review what will be deleted before confirming. Some files, especially developer tools and simulator runtimes, can be large but may be needed for your work. The developers are not responsible for any data loss or system issues that may occur from using this application.
 
 ## ✨ Features
 
@@ -14,6 +16,10 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **System & Application Caches** - Remove cached data from system and applications
 - **Browser Caches** - Clean Safari, Chrome, Firefox, Edge, and Brave caches
 - **Developer Tool Caches** - Clear Xcode, CocoaPods, npm, Gradle, and more
+- **Xcode Simulators** - Delete iOS/iPadOS simulator devices and runtimes
+  - Individual simulator devices with names (e.g., "iPhone 15 Pro - iOS 18.2")
+  - Simulator runtime assets (uses `xcrun simctl runtime delete`)
+  - DerivedData, Archives, and Device Support files
 - **AI Agent Caches** - Remove caches from ChatGPT, Claude, Cursor, and other AI tools
 - **Temporary Files** - Delete temporary files and logs
 - **Large Files** - Find and manage files over 100MB
@@ -25,11 +31,14 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Move to Trash** - Files moved to Trash by default (recoverable)
 - **Debug Mode** - Test cleanup operations without actually deleting files
 - **Preview Before Cleanup** - Review exactly what will be deleted
+- **Drill-Down Navigation** - Explore folder contents and select individual files
+- **Show in Finder** - Right-click any item to reveal it in Finder
 
 ### 📊 Storage Analysis
-- **Visual Storage Breakdown** - See what's taking up space
+- **Visual Storage Breakdown** - See what's taking up space with interactive pie chart
 - **Category Analysis** - Detailed breakdown by file type
 - **Real-time Scanning** - Live progress during storage analysis
+- **Disk Space Indicator** - Bottom bar showing available space, updates after cleanup
 - **File Browser** - Explore your filesystem with size information
 
 ### ⚙️ Advanced Features
@@ -77,15 +86,55 @@ The app requires the following permissions to function properly:
 - **Full Disk Access** - Required to scan and clean cache directories
   - Go to System Settings > Privacy & Security > Full Disk Access
   - Add Mac Storage Cleanup to the list
+  - The app will prompt you on first launch if this permission is not granted
+
+## ⚠️ Important Safety Information
+
+**Please read carefully before using this application:**
+
+### Risky Deletions
+
+Some files that can be cleaned are **critical for certain workflows**:
+
+- **Xcode Simulator Runtimes** - Deleting these will remove iOS/iPadOS simulators. You'll need to re-download them (several GB each) if you need them for development.
+- **Xcode DerivedData** - Safe to delete but will cause longer build times on next Xcode build.
+- **Developer Tool Caches** - May require re-downloading dependencies (npm, CocoaPods, etc.)
+- **Browser Caches** - Will log you out of websites and require re-downloading cached content.
+
+### Best Practices
+
+1. **Use Debug Mode First** - Test what will be deleted without actually deleting
+2. **Review Before Deleting** - Always check the preview before confirming
+3. **Start Small** - Clean obvious caches first (browser, system caches)
+4. **Backup Important Data** - Enable backup option for critical cleanups
+5. **Know What You're Deleting** - Hover over items to see full paths and descriptions
+
+### What's Protected
+
+The app automatically protects:
+- System files required for macOS to function
+- User data (Photos, Mail, Messages, Contacts, etc.)
+- Active applications
+- Keychains and security files
+
+### Disclaimer
+
+This software is provided "as is" without warranty. The developers are not responsible for:
+- Data loss from deleted files
+- System instability
+- Broken development environments
+- Lost work or productivity
+
+**Always maintain regular backups of your important data.**
 
 ## 💡 Usage
 
 ### Quick Start
 
-1. **Launch the app** and grant necessary permissions
+1. **Launch the app** and grant Full Disk Access permission when prompted
 2. **Scan Your Mac** - Click the menu icon and select "Scan Storage"
 3. **Review Results** - Browse the cleanup candidates by category
-4. **Select Items** - Choose what you want to clean
+4. **Select Items** - Choose what you want to clean (or drill down into folders)
 5. **Clean Up** - Click "Clean Up Selected" and confirm
 
 ### Debug Mode
@@ -96,6 +145,13 @@ For testing without actually deleting files:
 2. Go to the "Cleanup" tab
 3. Enable "Debug Mode (simulate deletions)"
 4. All cleanup operations will be simulated
+
+### Drill-Down Navigation
+
+1. Click the arrow (›) next to any folder to see its contents
+2. Select individual files or subdirectories
+3. Use "Show in Finder" (right-click) to locate files
+4. Delete selected items directly from the detail view
 
 ### Scheduled Cleanup
 
@@ -153,16 +209,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## ⚠️ Disclaimer
-
-This application deletes files from your system. While it includes safety features and protections:
-
-- Always review what will be deleted before confirming
-- Use the backup feature for important cleanups
-- Test with Debug Mode first if unsure
-- The developers are not responsible for data loss
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -173,7 +220,6 @@ This application deletes files from your system. While it includes safety featur
 ## 📧 Contact
 
 - GitHub Issues: [Report a bug or request a feature](https://github.com/yourusername/MacCleaner/issues)
-- Email: your.email@example.com
 
 ## 🗺️ Roadmap
 

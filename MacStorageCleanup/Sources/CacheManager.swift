@@ -31,6 +31,7 @@ public enum DeveloperTool: String, CaseIterable {
     case xcodeSimulators
     case xcodeDerivedData
     case xcodeArchives
+    case xcodeDeviceSupport
     case androidStudio
     case intellijIdea
     case visualStudioCode
@@ -48,6 +49,10 @@ public enum DeveloperTool: String, CaseIterable {
     public var displayName: String {
         switch self {
         case .xcode: return "Xcode Caches"
+        case .xcodeSimulators: return "Xcode Simulators"
+        case .xcodeDerivedData: return "Xcode DerivedData"
+        case .xcodeArchives: return "Xcode Archives"
+        case .xcodeDeviceSupport: return "iOS Device Support"
         case .xcodeSimulators: return "Xcode Simulators"
         case .xcodeDerivedData: return "Xcode DerivedData"
         case .xcodeArchives: return "Xcode Archives"
@@ -73,11 +78,20 @@ public enum DeveloperTool: String, CaseIterable {
         case .xcode:
             return ["\(homeDir)/Library/Caches/com.apple.dt.Xcode"]
         case .xcodeSimulators:
-            return ["\(homeDir)/Library/Developer/CoreSimulator/Caches"]
+            return [
+                "\(homeDir)/Library/Developer/CoreSimulator/Caches",
+                "\(homeDir)/Library/Developer/CoreSimulator/Devices",
+                "/Library/Developer/CoreSimulator/Volumes",
+                "/Library/Developer/CoreSimulator/Profiles/Runtimes",
+                "/Library/Developer/CoreSimulator/Cryptex/Images/bundle",
+                "/System/Library/AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime"
+            ]
         case .xcodeDerivedData:
             return ["\(homeDir)/Library/Developer/Xcode/DerivedData"]
         case .xcodeArchives:
             return ["\(homeDir)/Library/Developer/Xcode/Archives"]
+        case .xcodeDeviceSupport:
+            return ["\(homeDir)/Library/Developer/Xcode/iOS DeviceSupport"]
         case .androidStudio:
             return [
                 "\(homeDir)/Library/Caches/Google/AndroidStudio*",
@@ -315,13 +329,85 @@ public class DefaultCacheManager: CacheManager {
                         continue
                     }
                     
+                    // Special handling for AssetsV2 - scan subdirectories
+                    if expandedPath.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") {
+                        do {
+                            let contents = try fileManager.contentsOfDirectory(atPath: expandedPath)
+                            for item in contents where item.hasSuffix(".asset") {
+                                let assetPath = expandedPath + "/" + item
+                                let assetURL = URL(fileURLWithPath: assetPath)
+                                
+                                let size = await calculateDirectorySize(assetURL)
+                                guard size > 0 else { continue }
+                                
+                                var description = "\(tool.displayName) - \(item)"
+                                if let version = readSimulatorVersion(at: assetPath) {
+                                    description = "\(version) - SimulatorRuntimeAsset"
+                                }
+                                
+                                let developerCache = DeveloperCache(
+                                    tool: tool,
+                                    cacheLocation: assetURL,
+                                    size: size,
+                                    description: description
+                                )
+                                developerCaches.append(developerCache)
+                            }
+                        } catch {
+                            print("Error scanning AssetsV2: \(error)")
+                        }
+                        continue
+                    }
+                    
+                    // Special handling for CoreSimulator Devices - scan subdirectories
+                    if expandedPath.contains("CoreSimulator/Devices") && !expandedPath.contains("Caches") {
+                        do {
+                            let contents = try fileManager.contentsOfDirectory(atPath: expandedPath)
+                            for item in contents where !item.hasPrefix(".") {
+                                let devicePath = expandedPath + "/" + item
+                                var isDir: ObjCBool = false
+                                guard fileManager.fileExists(atPath: devicePath, isDirectory: &isDir), isDir.boolValue else {
+                                    continue
+                                }
+                                
+                                let deviceURL = URL(fileURLWithPath: devicePath)
+                                let size = await calculateDirectorySize(deviceURL)
+                                guard size > 0 else { continue }
+                                
+                                var description = "Simulator Device - \(item)"
+                                if let deviceInfo = readSimulatorDeviceInfo(at: devicePath) {
+                                    description = "\(deviceInfo.name) - \(deviceInfo.runtime)"
+                                }
+                                
+                                let developerCache = DeveloperCache(
+                                    tool: tool,
+                                    cacheLocation: deviceURL,
+                                    size: size,
+                                    description: description
+                                )
+                                developerCaches.append(developerCache)
+                            }
+                        } catch {
+                            print("Error scanning Devices: \(error)")
+                        }
+                        continue
+                    }
+                    
                     // Calculate total size of cache
                     let size = await calculateDirectorySize(cacheURL)
                     
                     // Skip if empty
                     guard size > 0 else { continue }
                     
-                    let description = "\(tool.displayName) - \(cacheURL.lastPathComponent)"
+                    // Special handling for other simulator runtime assets
+                    var description = "\(tool.displayName) - \(cacheURL.lastPathComponent)"
+                    if tool == .xcodeSimulators {
+                        // Check if this is a simulator runtime directory
+                        if let version = readSimulatorVersion(at: expandedPath) {
+                            description = "\(version) - SimulatorRuntimeAsset"
+                        }
+                    }
+                    
                     let developerCache = DeveloperCache(
                         tool: tool,
                         cacheLocation: cacheURL,
@@ -662,6 +748,46 @@ public class DefaultCacheManager: CacheManager {
         }
         
         return totalSize
+    }
+    
+    /// Read simulator version from .asset plist
+    private func readSimulatorVersion(at path: String) -> String? {
+        let plistPath = path + "/Info.plist"
+        
+        guard fileManager.fileExists(atPath: plistPath),
+              let plistData = fileManager.contents(atPath: plistPath),
+              let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any] else {
+            return nil
+        }
+        
+        // Get SimulatorVersion from MobileAssetProperties
+        if let mobileAssetProps = plist["MobileAssetProperties"] as? [String: Any],
+           let version = mobileAssetProps["SimulatorVersion"] as? String {
+            return version
+        }
+        
+        return nil
+    }
+    
+    /// Read simulator device info from device.plist
+    private func readSimulatorDeviceInfo(at path: String) -> (name: String, runtime: String)? {
+        let plistPath = path + "/device.plist"
+        
+        guard fileManager.fileExists(atPath: plistPath),
+              let plistData = fileManager.contents(atPath: plistPath),
+              let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any] else {
+            return nil
+        }
+        
+        let name = plist["name"] as? String ?? "Unknown Device"
+        let runtime = plist["runtime"] as? String ?? "Unknown Runtime"
+        
+        // Clean up runtime string (e.g., "com.apple.CoreSimulator.SimRuntime.iOS-18-2" -> "iOS 18.2")
+        let cleanRuntime = runtime
+            .replacingOccurrences(of: "com.apple.CoreSimulator.SimRuntime.", with: "")
+            .replacingOccurrences(of: "-", with: " ")
+        
+        return (name: name, runtime: cleanRuntime)
     }
 }
 

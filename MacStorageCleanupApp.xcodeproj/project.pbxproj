@@ -42,6 +42,9 @@
 		F1FFAFD82F4A29A8005C6ACB /* FileBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */; };
 		F1FFAFDA2F4A29B7005C6ACB /* FileBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */; };
 		F1FFAFDC2F500F97005C6ACB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1FFAFDB2F500F97005C6ACB /* Assets.xcassets */; };
+		F1FFAFDE2F50A06A005C6ACB /* CandidateDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFDD2F50A06A005C6ACB /* CandidateDetailView.swift */; };
+		F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFDF2F50A348005C6ACB /* DiskSpaceBar.swift */; };
+		F1FFAFE22F50ACB0005C6ACB /* PermissionRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */; };
 		FWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = PKG001 /* MacStorageCleanupCore */; };
 /* End PBXBuildFile section */
 
@@ -49,6 +52,9 @@
 		F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserViewModel.swift; sourceTree = "<group>"; };
 		F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserView.swift; sourceTree = "<group>"; };
 		F1FFAFDB2F500F97005C6ACB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F1FFAFDD2F50A06A005C6ACB /* CandidateDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateDetailView.swift; sourceTree = "<group>"; };
+		F1FFAFDF2F50A348005C6ACB /* DiskSpaceBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceBar.swift; sourceTree = "<group>"; };
+		F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequestView.swift; sourceTree = "<group>"; };
 		INFO001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		PRODUCT001 /* MacStorageCleanupApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacStorageCleanupApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		SRC001 /* MacStorageCleanupApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacStorageCleanupApp.swift; sourceTree = "<group>"; };
@@ -122,6 +128,9 @@
 		GROUP003 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */,
+				F1FFAFDF2F50A348005C6ACB /* DiskSpaceBar.swift */,
+				F1FFAFDD2F50A06A005C6ACB /* CandidateDetailView.swift */,
 				F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */,
 				SRC002 /* MainWindowView.swift */,
 				SRC003 /* StorageHeaderView.swift */,
@@ -259,6 +268,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				APP001 /* MacStorageCleanupApp.swift in Sources */,
+				F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */,
 				APP002 /* MainWindowView.swift in Sources */,
 				APP003 /* StorageHeaderView.swift in Sources */,
 				APP004 /* StorageVisualizationView.swift in Sources */,
@@ -271,6 +281,7 @@
 				APP011 /* CleanupCandidateData.swift in Sources */,
 				APP012 /* CleanupCandidatesViewModel.swift in Sources */,
 				APP013 /* CleanupCandidatesView.swift in Sources */,
+				F1FFAFDE2F50A06A005C6ACB /* CandidateDetailView.swift in Sources */,
 				APP014 /* CleanupCategoriesListView.swift in Sources */,
 				APP015 /* CleanupPreviewView.swift in Sources */,
 				APP016 /* CleanupPreviewViewModel.swift in Sources */,
@@ -283,6 +294,7 @@
 				APP022 /* ApplicationsViewModel.swift in Sources */,
 				APP023 /* ApplicationUninstallView.swift in Sources */,
 				APP024 /* ApplicationUninstallViewModel.swift in Sources */,
+				F1FFAFE22F50ACB0005C6ACB /* PermissionRequestView.swift in Sources */,
 				APP025 /* PreferencesWindow.swift in Sources */,
 				APP026 /* PreferencesViewModel.swift in Sources */,
 				APP027 /* BackupManagementView.swift in Sources */,
@@ -368,11 +380,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MacStorageCleanupApp/MacStorageCleanupApp.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = D27PA9832J;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -398,8 +410,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.maccleaner;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -467,11 +480,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MacStorageCleanupApp/MacStorageCleanupApp.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = D27PA9832J;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -497,8 +510,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.maccleaner;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};

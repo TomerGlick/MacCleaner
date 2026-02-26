@@ -72,7 +72,7 @@ struct CleanupCandidateData: Identifiable {
         
         var displayName: String {
             switch self {
-            case .caches: return "Caches"
+            case .caches: return "Cleanup Candidates"
             case .temporaryFiles: return "Temporary Files"
             case .largeFiles: return "Large Files"
             case .oldFiles: return "Old Files"
