@@ -61,9 +61,6 @@ struct BackupManagementView: View {
                 Text("Are you sure you want to delete the backup from \(formatDate(backup.createdDate))? This action cannot be undone.")
             }
         }
-        .onAppear {
-            viewModel.loadBackups()
-        }
     }
     
     // MARK: - Header View
@@ -146,6 +143,11 @@ struct BackupManagementView: View {
             Text("Loading backups...")
                 .font(.body)
                 .foregroundColor(.secondary)
+            
+            Button("Cancel") {
+                viewModel.cancelLoad()
+            }
+            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -158,15 +160,25 @@ struct BackupManagementView: View {
                 .font(.system(size: 48))
                 .foregroundColor(.secondary)
             
-            Text("No Backups")
-                .font(.title3)
+            Text("Backup Management")
+                .font(.title2)
                 .fontWeight(.semibold)
             
-            Text("Backups will appear here when you perform cleanup operations with backup enabled")
+            Text("Scan to view and manage cleanup backups")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
+            
+            Button(action: {
+                viewModel.loadBackups()
+            }) {
+                Label("Scan Backups", systemImage: "magnifyingglass")
+                    .font(.headline)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

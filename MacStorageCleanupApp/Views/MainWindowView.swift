@@ -60,6 +60,20 @@ struct MainWindowView: View {
                             .tag(MainTab.backups)
                     }
                 }
+                
+                Spacer()
+                
+                Divider()
+                
+                // Settings button at bottom
+                Button(action: {
+                    showingPreferences = true
+                }) {
+                    Label("Settings", systemImage: "gear")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .padding()
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 250)
         } detail: {
@@ -80,22 +94,10 @@ struct MainWindowView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button(action: {
-                            showingScanView = true
-                        }) {
-                            Label("Scan Storage", systemImage: "magnifyingglass")
-                        }
-                        
-                        Divider()
-                        
-                        Button(action: {
-                            showingPreferences = true
-                        }) {
-                            Label("Preferences", systemImage: "gear")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
+                    Button(action: {
+                        showingScanView = true
+                    }) {
+                        Label("Scan Storage", systemImage: "magnifyingglass")
                     }
                 }
             }
@@ -105,9 +107,6 @@ struct MainWindowView: View {
         }
         .sheet(isPresented: $showingPreferences) {
             PreferencesWindow()
-        }
-        .task {
-            await viewModel.loadStorageData()
         }
         .onChange(of: coordinator.globalErrors) { errors in
             if let firstError = errors.first {
@@ -135,24 +134,65 @@ struct MainWindowView: View {
             Divider()
             
             // Main content area
-            HStack(spacing: 0) {
-                // Storage visualization
-                StorageVisualizationView(viewModel: viewModel)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                
-                Divider()
-                
-                // Category breakdown or detail view
-                if let selectedCategory = viewModel.selectedCategory {
-                    CategoryDetailView(viewModel: viewModel, category: selectedCategory)
-                        .frame(width: 600)
-                        .transition(.move(edge: .trailing))
-                } else {
-                    CategoryBreakdownView(viewModel: viewModel)
-                        .frame(width: 300)
+            if viewModel.categoryData.isEmpty && !viewModel.isLoading {
+                // Empty state with scan button
+                VStack(spacing: 20) {
+                    Image(systemName: "internaldrive")
+                        .font(.system(size: 64))
+                        .foregroundColor(.secondary)
+                    
+                    Text("Storage Analysis")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text("Scan your Mac to see storage breakdown")
+                        .foregroundColor(.secondary)
+                    
+                    Button(action: {
+                        Task {
+                            await viewModel.loadStorageData()
+                        }
+                    }) {
+                        Label("Scan Storage", systemImage: "magnifyingglass")
+                            .font(.headline)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isLoading {
+                // Loading state with cancel button
+                VStack(spacing: 20) {
+                    ProgressView("Analyzing storage...")
+                        .progressViewStyle(.circular)
+                    
+                    Button("Cancel") {
+                        viewModel.cancelScan()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                HStack(spacing: 0) {
+                    // Storage visualization
+                    StorageVisualizationView(viewModel: viewModel)
+                        .frame(maxWidth: .infinity)
                         .padding()
-                        .transition(.move(edge: .trailing))
+                    
+                    Divider()
+                    
+                    // Category breakdown or detail view
+                    if let selectedCategory = viewModel.selectedCategory {
+                        CategoryDetailView(viewModel: viewModel, category: selectedCategory)
+                            .frame(width: 600)
+                            .transition(.move(edge: .trailing))
+                    } else {
+                        CategoryBreakdownView(viewModel: viewModel)
+                            .frame(width: 300)
+                            .padding()
+                            .transition(.move(edge: .trailing))
+                    }
                 }
             }
             

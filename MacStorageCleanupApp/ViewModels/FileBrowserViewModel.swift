@@ -59,7 +59,6 @@ class FileBrowserViewModel: ObservableObject {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser
         self.currentPath = startPath ?? homeDir
         self.navigationStack = [self.currentPath]
-        loadItems()
     }
     
     // MARK: - Navigation
@@ -99,6 +98,10 @@ class FileBrowserViewModel: ObservableObject {
         Task {
             await loadItemsAsync()
         }
+    }
+    
+    func cancelLoad() {
+        isLoading = false
     }
     
     private func loadItemsAsync() async {

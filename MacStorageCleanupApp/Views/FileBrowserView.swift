@@ -23,6 +23,33 @@ struct FileBrowserView: View {
             // File list
             if viewModel.isLoading {
                 loadingView
+            } else if viewModel.items.isEmpty {
+                // Empty state with scan button
+                VStack(spacing: 20) {
+                    Image(systemName: "folder.badge.questionmark")
+                        .font(.system(size: 64))
+                        .foregroundColor(.secondary)
+                    
+                    Text("File Browser")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text("Browse and manage files on your Mac")
+                        .foregroundColor(.secondary)
+                    
+                    Button(action: {
+                        Task {
+                            await viewModel.loadItems()
+                        }
+                    }) {
+                        Label("Browse Files", systemImage: "folder")
+                            .font(.headline)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.filteredItems.isEmpty {
                 emptyView
             } else {
@@ -195,6 +222,11 @@ struct FileBrowserView: View {
             Text("Loading...")
                 .font(.headline)
                 .foregroundColor(.secondary)
+            
+            Button("Cancel") {
+                viewModel.cancelLoad()
+            }
+            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -27,6 +27,35 @@ struct CleanupCandidatesView: View {
             // File list
             if viewModel.isLoading {
                 loadingView
+            } else if viewModel.candidates.isEmpty {
+                // Empty state with scan button
+                VStack(spacing: 20) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 64))
+                        .foregroundColor(.secondary)
+                    
+                    Text("Scan for \(viewModel.selectedCategory.displayName)")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text(viewModel.selectedCategory.description)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                    
+                    Button(action: {
+                        Task {
+                            await viewModel.loadCandidates()
+                        }
+                    }) {
+                        Label("Scan", systemImage: "magnifyingglass")
+                            .font(.headline)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.filteredCandidates.isEmpty {
                 emptyStateView
             } else {
@@ -38,10 +67,6 @@ struct CleanupCandidatesView: View {
             // Footer with selection summary
             footerView
             }
-        }
-        .task {
-            print("DEBUG: CleanupCandidatesView task started")
-            await viewModel.loadCandidates()
         }
     }
     
@@ -194,6 +219,11 @@ struct CleanupCandidatesView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .monospacedDigit()
+            
+            Button("Cancel") {
+                viewModel.cancelScan()
+            }
+            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()

@@ -36,9 +36,6 @@ struct ApplicationsListView: View {
                 )
             }
         }
-        .task {
-            await viewModel.loadApplications()
-        }
     }
     
     // MARK: - Header View
@@ -119,6 +116,11 @@ struct ApplicationsListView: View {
             Text("Discovering applications...")
                 .font(.body)
                 .foregroundColor(.secondary)
+            
+            Button("Cancel") {
+                viewModel.cancelLoad()
+            }
+            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -161,15 +163,27 @@ struct ApplicationsListView: View {
                 .font(.system(size: 48))
                 .foregroundColor(.secondary)
             
-            Text("No Applications Found")
-                .font(.title3)
+            Text("Applications")
+                .font(.title2)
                 .fontWeight(.semibold)
             
-            Text("No applications were found in /Applications or ~/Applications")
+            Text("Scan to discover installed applications")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
+            
+            Button(action: {
+                Task {
+                    await viewModel.loadApplications()
+                }
+            }) {
+                Label("Scan Applications", systemImage: "magnifyingglass")
+                    .font(.headline)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

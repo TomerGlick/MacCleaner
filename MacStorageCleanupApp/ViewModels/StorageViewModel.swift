@@ -4,7 +4,7 @@ import MacStorageCleanupCore
 
 @MainActor
 class StorageViewModel: ObservableObject {
-    @Published var isLoading = true
+    @Published var isLoading = false
     @Published var totalCapacity: Int64 = 0
     @Published var usedSpace: Int64 = 0
     @Published var availableSpace: Int64 = 0
@@ -29,6 +29,7 @@ class StorageViewModel: ObservableObject {
     
     private var fileScanner: FileScanner?
     private let coordinator = ApplicationCoordinator.shared
+    private var scanTask: Task<Void, Never>?
     
     // Computed properties for display
     var formattedTotalCapacity: String {
@@ -56,7 +57,14 @@ class StorageViewModel: ObservableObject {
     func loadStorageData() async {
         isLoading = true
         await refreshDiskSpace()
-        await calculateCategoryBreakdown()
+        
+        do {
+            try Task.checkCancellation()
+            await calculateCategoryBreakdown()
+        } catch {
+            // Task was cancelled
+        }
+        
         isLoading = false
     }
     
@@ -718,7 +726,10 @@ class StorageViewModel: ObservableObject {
     
     func cancelScan() {
         fileScanner?.cancelScan()
+        scanTask?.cancel()
+        scanTask = nil
         isScanning = false
+        isLoading = false
     }
     
     func dismissScanResults() {

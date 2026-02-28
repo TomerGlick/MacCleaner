@@ -68,14 +68,34 @@ class CleanupCandidatesViewModel: ObservableObject {
         self.selectedCategory = category
     }
     
+    private var loadTask: Task<Void, Never>?
+    
     // MARK: - Data Loading
     
     func loadCandidates() async {
-        isLoading = true
-        print("DEBUG: Starting to load candidates for category: \(selectedCategory)")
-        await loadRealCandidates()
+        // Cancel any existing task
+        loadTask?.cancel()
+        
+        loadTask = Task {
+            isLoading = true
+            print("DEBUG: Starting to load candidates for category: \(selectedCategory)")
+            await loadRealCandidates()
+            
+            if !Task.isCancelled {
+                isLoading = false
+                print("DEBUG: Finished loading. Total candidates: \(candidates.count)")
+            }
+        }
+        
+        await loadTask?.value
+    }
+    
+    func cancelScan() {
+        loadTask?.cancel()
+        loadTask = nil
         isLoading = false
-        print("DEBUG: Finished loading. Total candidates: \(candidates.count)")
+        loadingProgress = 0.0
+        loadingMessage = ""
     }
     
     func removeCleanedFiles(_ cleanedPaths: [String]) {
@@ -101,21 +121,31 @@ class CleanupCandidatesViewModel: ObservableObject {
             loadingProgress = 0.1
             let systemResults = await coordinator.cacheManager.findSystemCaches()
             
+            guard !Task.isCancelled else { return }
+            
             loadingMessage = "Scanning application caches..."
             loadingProgress = 0.3
             let appResults = await coordinator.cacheManager.findApplicationCaches()
+            
+            guard !Task.isCancelled else { return }
             
             loadingMessage = "Scanning browser caches..."
             loadingProgress = 0.5
             let browserResults = await coordinator.cacheManager.findBrowserCaches()
             
+            guard !Task.isCancelled else { return }
+            
             loadingMessage = "Scanning developer caches..."
             loadingProgress = 0.7
             let devResults = await coordinator.cacheManager.findDeveloperCaches()
             
+            guard !Task.isCancelled else { return }
+            
             loadingMessage = "Scanning AI agent caches..."
             loadingProgress = 0.9
             let aiResults = await coordinator.cacheManager.findAIAgentCaches()
+            
+            guard !Task.isCancelled else { return }
             
             print("DEBUG: System caches found: \(systemResults.count)")
             print("DEBUG: App caches found: \(appResults.count)")
@@ -188,6 +218,8 @@ class CleanupCandidatesViewModel: ObservableObject {
             // For other categories, use sample data for now
             loadedCandidates = generateSampleCandidates(for: selectedCategory)
         }
+        
+        guard !Task.isCancelled else { return }
         
         candidates = loadedCandidates
         applyFilters()

@@ -51,6 +51,10 @@ class ApplicationsViewModel: ObservableObject {
         isLoading = false
     }
     
+    func cancelLoad() {
+        isLoading = false
+    }
+    
     func selectApplication(_ application: Application) {
         selectedApplication = application
         showUninstallView = true

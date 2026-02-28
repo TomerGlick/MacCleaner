@@ -49,6 +49,10 @@ class BackupManagementViewModel: ObservableObject {
         isLoading = false
     }
     
+    func cancelLoad() {
+        isLoading = false
+    }
+    
     func selectBackup(_ backup: Backup) {
         selectedBackup = backup
     }
