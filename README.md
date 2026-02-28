@@ -84,7 +84,7 @@ open MacStorageCleanupApp.xcodeproj
 
 ### Download Pre-built Binary
 
-*Coming soon - Check the [Releases](https://github.com/yourusername/MacCleaner/releases) page*
+*Check the [Releases](https://github.com/TomerGlick/MacCleaner/releases) page*
 
 ## 🔒 Permissions
 
