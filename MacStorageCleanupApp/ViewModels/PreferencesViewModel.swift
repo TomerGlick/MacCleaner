@@ -6,6 +6,10 @@ import MacStorageCleanupCore
 class PreferencesViewModel: ObservableObject {
     @Published var preferences: UserPreferences
     
+    // General preferences
+    @Published var showMenuBarIcon: Bool
+    @Published var launchAtLogin: Bool
+    
     // Backup preferences
     @Published var createBackupsByDefault: Bool
     @Published var backupLocation: String
@@ -38,6 +42,8 @@ class PreferencesViewModel: ObservableObject {
         
         // Initialize all properties first
         self.preferences = loadedPreferences
+        self.showMenuBarIcon = userDefaults.bool(forKey: "showMenuBarIcon")
+        self.launchAtLogin = userDefaults.bool(forKey: "launchAtLogin")
         self.createBackupsByDefault = loadedPreferences.createBackupsByDefault
         self.backupLocation = NSHomeDirectory() + "/Library/Application Support/MacStorageCleanup/Backups"
         self.moveToTrashByDefault = loadedPreferences.moveToTrashByDefault
@@ -63,6 +69,17 @@ class PreferencesViewModel: ObservableObject {
         // Save to UserDefaults
         if let encoded = try? JSONEncoder().encode(preferences) {
             userDefaults.set(encoded, forKey: preferencesKey)
+        }
+        
+        // Save menu bar preferences
+        userDefaults.set(showMenuBarIcon, forKey: "showMenuBarIcon")
+        userDefaults.set(launchAtLogin, forKey: "launchAtLogin")
+        
+        // Update menu bar visibility
+        if showMenuBarIcon {
+            MenuBarManager.shared.setupMenuBar()
+        } else {
+            MenuBarManager.shared.removeMenuBar()
         }
         
         // Also save debug mode separately for CleanupEngine access

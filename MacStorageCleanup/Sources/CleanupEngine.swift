@@ -500,6 +500,13 @@ public final class DefaultCleanupEngine: CleanupEngine {
     
     /// Delete simulator runtime using xcrun simctl
     private func deleteSimulatorRuntime(at url: URL) throws {
+        // Check if this is a System-protected path
+        let path = url.path
+        if path.hasPrefix("/System/") {
+            // System paths require special handling
+            print("DEBUG: Runtime is in System-protected location: \(path)")
+        }
+        
         // Read the Build identifier from Info.plist
         let plistPath = url.appendingPathComponent("Info.plist").path
         
@@ -511,7 +518,48 @@ public final class DefaultCleanupEngine: CleanupEngine {
             throw CleanupError.unknown("Could not read Build identifier from runtime plist")
         }
         
-        print("DEBUG: Deleting simulator runtime with build: \(build)")
+        print("DEBUG: Attempting to delete simulator runtime with build: \(build)")
+        
+        // First, check if the runtime exists in simctl
+        let listProcess = Process()
+        listProcess.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        listProcess.arguments = ["simctl", "runtime", "list"]
+        
+        let listPipe = Pipe()
+        listProcess.standardOutput = listPipe
+        listProcess.standardError = listPipe
+        
+        var runtimeExists = false
+        do {
+            try listProcess.run()
+            listProcess.waitUntilExit()
+            
+            let listData = listPipe.fileHandleForReading.readDataToEndOfFile()
+            let listOutput = String(data: listData, encoding: .utf8) ?? ""
+            
+            // Check if the build identifier exists in the runtime list
+            runtimeExists = listOutput.contains(build)
+            
+            if !runtimeExists {
+                print("DEBUG: Runtime \(build) not found in simctl list")
+                
+                // For System-protected paths, we can't delete directly
+                if path.hasPrefix("/System/") {
+                    throw CleanupError.permissionDenied(path: "This simulator runtime (\(build)) is not registered with Xcode and is in a System-protected location. Please use Xcode's 'Platforms' preferences or run 'xcrun simctl runtime delete' from Terminal with appropriate permissions.")
+                }
+                
+                // For non-System paths, try direct deletion
+                print("DEBUG: Attempting direct deletion of unregistered runtime")
+                try fileManager.removeItem(at: url)
+                print("DEBUG: Successfully deleted runtime directory directly: \(url.path)")
+                return
+            }
+        } catch let error as CleanupError {
+            throw error
+        } catch {
+            print("WARNING: Could not list runtimes: \(error)")
+            // Continue to try deletion anyway
+        }
         
         // Execute xcrun simctl runtime delete
         let process = Process()
@@ -529,13 +577,43 @@ public final class DefaultCleanupEngine: CleanupEngine {
             if process.terminationStatus != 0 {
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: data, encoding: .utf8) ?? "Unknown error"
-                print("ERROR: xcrun simctl runtime delete failed: \(output)")
-                throw CleanupError.unknown("Failed to delete simulator runtime: \(output)")
+                print("ERROR: xcrun simctl runtime delete failed with status \(process.terminationStatus): \(output)")
+                
+                // For System-protected paths, provide helpful error
+                if path.hasPrefix("/System/") {
+                    throw CleanupError.permissionDenied(path: "Cannot delete simulator runtime (\(build)) in System-protected location. The runtime may be orphaned. Try: 1) Open Xcode > Settings > Platforms and delete it there, or 2) Run 'sudo xcrun simctl runtime delete \(build)' in Terminal")
+                }
+                
+                // For non-System paths, try direct deletion as fallback
+                print("DEBUG: Attempting direct file deletion as fallback")
+                do {
+                    try fileManager.removeItem(at: url)
+                    print("DEBUG: Successfully deleted runtime directory directly: \(url.path)")
+                } catch {
+                    throw CleanupError.unknown("Failed to delete simulator runtime via simctl and direct deletion: \(output)")
+                }
+            } else {
+                print("DEBUG: Successfully deleted simulator runtime via simctl: \(build)")
+            }
+        } catch let error as CleanupError {
+            throw error
+        } catch {
+            // If process execution fails
+            print("WARNING: Failed to execute xcrun simctl: \(error.localizedDescription)")
+            
+            // For System-protected paths, provide helpful error
+            if path.hasPrefix("/System/") {
+                throw CleanupError.permissionDenied(path: "Cannot delete simulator runtime in System-protected location. Please use Xcode's 'Platforms' preferences to remove this runtime.")
             }
             
-            print("DEBUG: Successfully deleted simulator runtime: \(build)")
-        } catch {
-            throw CleanupError.unknown("Failed to execute xcrun simctl: \(error.localizedDescription)")
+            // For non-System paths, try direct deletion
+            print("DEBUG: Attempting direct file deletion as fallback")
+            do {
+                try fileManager.removeItem(at: url)
+                print("DEBUG: Successfully deleted runtime directory directly: \(url.path)")
+            } catch {
+                throw CleanupError.unknown("Failed to execute xcrun simctl and direct deletion: \(error.localizedDescription)")
+            }
         }
     }
     

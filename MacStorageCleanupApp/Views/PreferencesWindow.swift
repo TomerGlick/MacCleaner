@@ -8,6 +8,12 @@ struct PreferencesWindow: View {
     
     var body: some View {
         TabView {
+            // General preferences
+            generalPreferencesTab
+                .tabItem {
+                    Label("General", systemImage: "gearshape")
+                }
+            
             // Backup preferences
             backupPreferencesTab
                 .tabItem {
@@ -54,6 +60,31 @@ struct PreferencesWindow: View {
                 .buttonStyle(.borderedProminent)
             }
         }
+    }
+    
+    // MARK: - General Preferences Tab
+    
+    private var generalPreferencesTab: some View {
+        Form {
+            Section {
+                Toggle("Show menu bar icon", isOn: $viewModel.showMenuBarIcon)
+                    .help("Display a menu bar icon with quick access to system stats")
+                
+                Toggle("Launch at login", isOn: $viewModel.launchAtLogin)
+                    .help("Automatically start the app when you log in")
+            } header: {
+                Text("Menu Bar")
+                    .font(.headline)
+            }
+            
+            Section {
+                Text("The menu bar icon provides quick access to system statistics and cleanup tools without opening the main window.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
     }
     
     // MARK: - Backup Preferences Tab

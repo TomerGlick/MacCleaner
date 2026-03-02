@@ -37,8 +37,49 @@ public final class DefaultSafeListManager: SafeListManager {
         // Expand tilde in path for user directory
         let expandedPath = (path as NSString).expandingTildeInPath
         
-        // Allow deletion of simulator runtime assets (they use xcrun simctl)
+        // Check if it's a simulator runtime asset
         if expandedPath.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") && expandedPath.hasSuffix(".asset") {
+            // System-protected simulator runtimes cannot be deleted without special permissions
+            if expandedPath.hasPrefix("/System/") {
+                // Check if the runtime is registered with simctl
+                let plistPath = expandedPath + "/Info.plist"
+                if FileManager.default.fileExists(atPath: plistPath),
+                   let plistData = FileManager.default.contents(atPath: plistPath),
+                   let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+                   let mobileAssetProps = plist["MobileAssetProperties"] as? [String: Any],
+                   let build = mobileAssetProps["Build"] as? String {
+                    
+                    // Check if runtime is registered with simctl
+                    let process = Process()
+                    process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+                    process.arguments = ["simctl", "runtime", "list"]
+                    
+                    let pipe = Pipe()
+                    process.standardOutput = pipe
+                    process.standardError = pipe
+                    
+                    do {
+                        try process.run()
+                        process.waitUntilExit()
+                        
+                        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                        let output = String(data: data, encoding: .utf8) ?? ""
+                        
+                        // If runtime is registered, allow deletion (simctl can handle it)
+                        if output.contains(build) {
+                            return false
+                        }
+                    } catch {
+                        // If we can't check, protect it to be safe
+                        return true
+                    }
+                }
+                
+                // System runtime not registered with simctl - protect it
+                return true
+            }
+            
+            // Non-system simulator runtimes can be deleted
             return false
         }
         

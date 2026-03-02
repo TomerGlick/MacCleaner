@@ -41,6 +41,18 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Disk Space Indicator** - Bottom bar showing available space, updates after cleanup
 - **File Browser** - Explore your filesystem with size information
 
+### 📊 Menu Bar System Monitor
+- **Always Accessible** - Status bar icon stays visible even when app is closed
+- **Real-time System Stats** - Monitor your Mac's health at a glance
+  - Storage: Available disk space with quick cleanup access
+  - Memory: RAM usage and pressure percentage
+  - CPU: Temperature and load percentage
+  - Battery: Level, charging status, and health percentage
+  - Uptime: System runtime since last restart
+  - Network: Real-time upload/download speeds
+- **Quick Actions** - Launch cleanup directly from menu bar
+- **Auto-refresh** - Stats update every 2 seconds
+
 ### ⚙️ Advanced Features
 - **Scheduled Cleanup** - Automatic cleanup on daily, weekly, or monthly basis
 - **Customizable Thresholds** - Set your own definitions for "large" and "old" files
@@ -49,6 +61,10 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Backup Management** - Restore from previous cleanup backups
 
 ## 📸 Screenshots
+
+### Menu Bar System Monitor
+![Menu Bar Stats](screenshots/menu-bar-stats.png)
+*Real-time system monitoring accessible from your menu bar*
 
 ### Main Window - Storage Analysis
 ![Storage Analysis](screenshots/main-window.png)
@@ -135,6 +151,20 @@ This software is provided "as is" without warranty. The developers are not respo
 **Always maintain regular backups of your important data.**
 
 ## 💡 Usage
+
+### Menu Bar Monitor
+
+The app includes a convenient menu bar monitor that stays accessible even when the main window is closed:
+
+1. **Access System Stats** - Click the menu bar icon to view real-time system information
+2. **Quick Cleanup** - Click "Free Up" next to storage to launch cleanup
+3. **Open Main App** - Click "Open Mac Storage Cleanup" to show the main window
+4. **Always Running** - The app continues monitoring in the background
+
+To enable/disable the menu bar icon:
+1. Open Preferences (gear icon)
+2. Go to the "General" tab
+3. Toggle "Show menu bar icon"
 
 ### Quick Start
 
@@ -230,12 +260,13 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 
 ## 🗺️ Roadmap
 
+- [x] Menu bar system monitor with real-time stats
 - [ ] Duplicate file finder
 - [ ] Download folder cleanup
 - [ ] Smart recommendations based on usage patterns
 - [ ] Export cleanup reports
-- [ ] Menu bar app mode
 - [ ] Localization support
+- [ ] Launch at login option
 
 ---
 

@@ -114,6 +114,13 @@ struct MainWindowView: View {
                 showErrorAlert(firstError)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StartStorageScan"))) { _ in
+            // Switch to storage tab and start scan
+            selectedTab = .storage
+            Task {
+                await viewModel.loadStorageData()
+            }
+        }
     }
     
     private func showErrorAlert(_ error: AppError) {
