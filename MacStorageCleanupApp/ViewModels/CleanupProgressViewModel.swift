@@ -19,6 +19,7 @@ class CleanupProgressViewModel: ObservableObject {
     private let filesToClean: [CleanupCandidateData]
     private let options: CleanupOptions
     private var cleanupTask: Task<Void, Never>?
+    private let loggingService = LoggingService.shared
     
     enum CleanupStatus {
         case notStarted
@@ -146,12 +147,10 @@ class CleanupProgressViewModel: ObservableObject {
     
     private func performCleanup() async {
         let coordinator = ApplicationCoordinator.shared
-        
-        print("DEBUG: Starting cleanup of \(filesToClean.count) items")
+        loggingService.debug("Starting cleanup for \(filesToClean.count) items")
         
         // Convert CleanupCandidateData to FileMetadata
         let fileMetadataList = filesToClean.map { candidate in
-            print("DEBUG: Preparing to clean: \(candidate.path)")
             return FileMetadata(
                 url: URL(fileURLWithPath: candidate.path),
                 size: candidate.size,
@@ -165,7 +164,7 @@ class CleanupProgressViewModel: ObservableObject {
         }
         
         do {
-            print("DEBUG: Calling performCleanup with options: moveToTrash=\(options.moveToTrash), createBackup=\(options.createBackup)")
+            loggingService.debug("Calling cleanup with moveToTrash=\(options.moveToTrash) createBackup=\(options.createBackup)")
             let result = try await coordinator.performCleanup(
                 files: fileMetadataList,
                 options: options,
@@ -178,10 +177,10 @@ class CleanupProgressViewModel: ObservableObject {
                     }
                 }
             )
-            
-            print("DEBUG: Cleanup result - filesRemoved: \(result.filesRemoved), spaceFreed: \(result.spaceFreed), errors: \(result.errors.count)")
-            for error in result.errors {
-                print("DEBUG: Cleanup error: \(error)")
+
+            loggingService.debug("Cleanup result filesRemoved=\(result.filesRemoved) spaceFreed=\(result.spaceFreed) errors=\(result.errors.count)")
+            result.errors.forEach { cleanupError in
+                loggingService.warning("Cleanup reported error: \(cleanupError.localizedDescription)")
             }
             
             // Cleanup completed
@@ -190,7 +189,7 @@ class CleanupProgressViewModel: ObservableObject {
             errorCount = result.errors.count
             
         } catch {
-            print("DEBUG: Cleanup threw error: \(error)")
+            loggingService.error("Cleanup threw an error", error: error)
             status = .cancelled
             errorCount += 1
         }

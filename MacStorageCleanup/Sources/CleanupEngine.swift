@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 /// Protocol for executing file cleanup operations safely
 public protocol CleanupEngine {
@@ -84,13 +85,21 @@ public struct ValidationResult {
 public final class DefaultCleanupEngine: CleanupEngine {
     private let safeListManager: SafeListManager
     private let backupManager: BackupManager
+    private let preferencesStore: PreferencesStore
     private let fileManager: FileManager
     private var isCancelled: Bool = false
     private let cancelQueue = DispatchQueue(label: "com.macstoragecleanup.cleanup.cancel")
+    private let logger = Logger(subsystem: "com.macstoragecleanup.core", category: "cleanup")
     
-    public init(safeListManager: SafeListManager, backupManager: BackupManager, fileManager: FileManager = .default) {
+    public init(
+        safeListManager: SafeListManager,
+        backupManager: BackupManager,
+        preferencesStore: PreferencesStore = UserDefaultsPreferencesStore(),
+        fileManager: FileManager = .default
+    ) {
         self.safeListManager = safeListManager
         self.backupManager = backupManager
+        self.preferencesStore = preferencesStore
         self.fileManager = fileManager
     }
     
@@ -160,10 +169,10 @@ public final class DefaultCleanupEngine: CleanupEngine {
         progressHandler: @escaping (CleanupProgress) -> Void
     ) async throws -> CleanupResult {
         // Check if debug mode is enabled
-        let debugMode = UserDefaults.standard.bool(forKey: "debugMode")
+        let debugMode = currentPreferences().debugMode
         
         if debugMode {
-            print("DEBUG MODE: Simulating cleanup without deleting files")
+            logger.notice("Debug mode enabled; simulating cleanup for \(files.count, privacy: .public) files")
             return await simulateCleanup(files: files, options: options, progressHandler: progressHandler)
         }
         
@@ -174,15 +183,14 @@ public final class DefaultCleanupEngine: CleanupEngine {
         
         // Validate files before cleanup
         let validation = validateCleanup(files: files)
-        
-        print("DEBUG: Validation - blocked files: \(validation.blockedFiles.count)")
+        logger.debug("Validation complete; blocked files: \(validation.blockedFiles.count, privacy: .public)")
         
         // Filter out blocked files
         let filesToClean = files.filter { file in
             !validation.blockedFiles.contains(file)
         }
         
-        print("DEBUG: Files to clean after filtering: \(filesToClean.count)")
+        logger.debug("Files eligible for cleanup after filtering: \(filesToClean.count, privacy: .public)")
         
         var backupLocation: URL?
         var deletedFiles: [URL] = []  // Track deleted files for rollback
@@ -215,9 +223,9 @@ public final class DefaultCleanupEngine: CleanupEngine {
         }
         
         // Process each file with atomic operations
-        print("DEBUG: Starting to process \(filesToClean.count) files")
+        logger.debug("Starting cleanup processing for \(filesToClean.count, privacy: .public) files")
         for (index, file) in filesToClean.enumerated() {
-            print("DEBUG: Processing file \(index + 1)/\(filesToClean.count): \(file.url.path)")
+            logger.debug("Processing file \(index + 1, privacy: .public)/\(filesToClean.count, privacy: .public): \(file.url.path, privacy: .public)")
             
             // Check for cancellation
             let cancelled = cancelQueue.sync { isCancelled }
@@ -246,36 +254,45 @@ public final class DefaultCleanupEngine: CleanupEngine {
             
             // Attempt to delete the file
             do {
-                print("DEBUG: Attempting to delete: \(file.url.path)")
-                print("DEBUG: Contains AssetsV2: \(file.url.path.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime"))")
-                print("DEBUG: Ends with .asset: \(file.url.path.hasSuffix(".asset"))")
-                
                 // Special handling for simulator runtime assets
                 if file.url.path.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") && file.url.path.hasSuffix(".asset") {
-                    print("DEBUG: Using xcrun simctl runtime delete")
+                    logger.debug("Using simctl runtime delete for \(file.url.path, privacy: .public)")
                     try deleteSimulatorRuntime(at: file.url)
                 } else if options.moveToTrash {
-                    print("DEBUG: Moving to trash")
+                    logger.debug("Moving item to Trash: \(file.url.path, privacy: .public)")
                     try moveToTrash(url: file.url)
                 } else {
-                    print("DEBUG: Removing item directly")
+                    logger.debug("Removing item directly: \(file.url.path, privacy: .public)")
                     try fileManager.removeItem(at: file.url)
                 }
-                
-                print("DEBUG: Successfully deleted: \(file.url.path)")
+                logger.debug("Successfully deleted \(file.url.path, privacy: .public)")
                 
                 // Track successful deletion for potential rollback
                 deletedFiles.append(file.url)
                 filesRemoved += 1
                 spaceFreed += file.size
             } catch {
-                print("ERROR: Failed to delete \(file.url.path): \(error)")
+                logger.error("Failed to delete \(file.url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 
                 // Convert error to CleanupError
                 let cleanupError = convertToCleanupError(error: error, path: file.url.path)
                 errors.append(cleanupError)
-                
-                // Don't rollback for individual file failures, just continue
+
+                if backupLocation != nil, !deletedFiles.isEmpty {
+                    await rollbackDeletions(deletedFiles: deletedFiles, backupLocation: backupLocation)
+                    deletedFiles.removeAll()
+                    filesRemoved = 0
+                    spaceFreed = 0
+
+                    progressHandler(CleanupProgress(
+                        currentFile: file.url.lastPathComponent,
+                        filesProcessed: index + 1,
+                        totalFiles: filesToClean.count,
+                        spaceFreed: spaceFreed
+                    ))
+                    break
+                }
+
                 progressHandler(CleanupProgress(
                     currentFile: file.url.lastPathComponent,
                     filesProcessed: index + 1,
@@ -504,7 +521,7 @@ public final class DefaultCleanupEngine: CleanupEngine {
         let path = url.path
         if path.hasPrefix("/System/") {
             // System paths require special handling
-            print("DEBUG: Runtime is in System-protected location: \(path)")
+            logger.debug("Runtime is in system-protected location: \(path, privacy: .public)")
         }
         
         // Read the Build identifier from Info.plist
@@ -518,7 +535,7 @@ public final class DefaultCleanupEngine: CleanupEngine {
             throw CleanupError.unknown("Could not read Build identifier from runtime plist")
         }
         
-        print("DEBUG: Attempting to delete simulator runtime with build: \(build)")
+        logger.debug("Attempting simulator runtime deletion for build \(build, privacy: .public)")
         
         // First, check if the runtime exists in simctl
         let listProcess = Process()
@@ -541,7 +558,7 @@ public final class DefaultCleanupEngine: CleanupEngine {
             runtimeExists = listOutput.contains(build)
             
             if !runtimeExists {
-                print("DEBUG: Runtime \(build) not found in simctl list")
+                logger.debug("Runtime \(build, privacy: .public) not found in simctl list")
                 
                 // For System-protected paths, we can't delete directly
                 if path.hasPrefix("/System/") {
@@ -549,15 +566,15 @@ public final class DefaultCleanupEngine: CleanupEngine {
                 }
                 
                 // For non-System paths, try direct deletion
-                print("DEBUG: Attempting direct deletion of unregistered runtime")
+                logger.debug("Attempting direct deletion of unregistered runtime at \(url.path, privacy: .public)")
                 try fileManager.removeItem(at: url)
-                print("DEBUG: Successfully deleted runtime directory directly: \(url.path)")
+                logger.debug("Successfully deleted runtime directory directly: \(url.path, privacy: .public)")
                 return
             }
         } catch let error as CleanupError {
             throw error
         } catch {
-            print("WARNING: Could not list runtimes: \(error)")
+            logger.warning("Could not list simulator runtimes: \(error.localizedDescription, privacy: .public)")
             // Continue to try deletion anyway
         }
         
@@ -577,7 +594,7 @@ public final class DefaultCleanupEngine: CleanupEngine {
             if process.terminationStatus != 0 {
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let output = String(data: data, encoding: .utf8) ?? "Unknown error"
-                print("ERROR: xcrun simctl runtime delete failed with status \(process.terminationStatus): \(output)")
+                logger.error("simctl runtime delete failed with status \(process.terminationStatus, privacy: .public): \(output, privacy: .public)")
                 
                 // For System-protected paths, provide helpful error
                 if path.hasPrefix("/System/") {
@@ -585,21 +602,21 @@ public final class DefaultCleanupEngine: CleanupEngine {
                 }
                 
                 // For non-System paths, try direct deletion as fallback
-                print("DEBUG: Attempting direct file deletion as fallback")
+                logger.debug("Attempting direct runtime deletion fallback at \(url.path, privacy: .public)")
                 do {
                     try fileManager.removeItem(at: url)
-                    print("DEBUG: Successfully deleted runtime directory directly: \(url.path)")
+                    logger.debug("Successfully deleted runtime directory directly: \(url.path, privacy: .public)")
                 } catch {
                     throw CleanupError.unknown("Failed to delete simulator runtime via simctl and direct deletion: \(output)")
                 }
             } else {
-                print("DEBUG: Successfully deleted simulator runtime via simctl: \(build)")
+                logger.debug("Successfully deleted simulator runtime via simctl: \(build, privacy: .public)")
             }
         } catch let error as CleanupError {
             throw error
         } catch {
             // If process execution fails
-            print("WARNING: Failed to execute xcrun simctl: \(error.localizedDescription)")
+            logger.warning("Failed to execute simctl runtime deletion: \(error.localizedDescription, privacy: .public)")
             
             // For System-protected paths, provide helpful error
             if path.hasPrefix("/System/") {
@@ -607,14 +624,18 @@ public final class DefaultCleanupEngine: CleanupEngine {
             }
             
             // For non-System paths, try direct deletion
-            print("DEBUG: Attempting direct file deletion as fallback")
+            logger.debug("Attempting direct file deletion fallback at \(url.path, privacy: .public)")
             do {
                 try fileManager.removeItem(at: url)
-                print("DEBUG: Successfully deleted runtime directory directly: \(url.path)")
+                logger.debug("Successfully deleted runtime directory directly: \(url.path, privacy: .public)")
             } catch {
                 throw CleanupError.unknown("Failed to execute xcrun simctl and direct deletion: \(error.localizedDescription)")
             }
         }
+    }
+
+    private func currentPreferences() -> UserPreferences {
+        (try? preferencesStore.load()) ?? .default
     }
     
     /// Convert generic error to CleanupError

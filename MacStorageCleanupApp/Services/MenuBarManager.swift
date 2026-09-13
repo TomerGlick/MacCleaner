@@ -12,8 +12,9 @@ class MenuBarManager: NSObject {
     }
     
     func setupMenuBar() {
-        // Create status item
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if statusItem == nil {
+            statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        }
         
         if let button = statusItem?.button {
             // Create a simple icon using SF Symbol
@@ -30,10 +31,12 @@ class MenuBarManager: NSObject {
             button.target = self
         }
         
-        // Create popover
-        popover = NSPopover()
-        popover?.contentSize = NSSize(width: 400, height: 600)
-        popover?.behavior = .transient
+        if popover == nil {
+            popover = NSPopover()
+            popover?.contentSize = NSSize(width: 400, height: 600)
+            popover?.behavior = .transient
+        }
+
         popover?.contentViewController = NSHostingController(rootView: StatusMenuView())
     }
     

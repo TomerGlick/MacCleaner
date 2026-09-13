@@ -18,14 +18,16 @@ class SystemStatsService: ObservableObject {
     
     private var timer: Timer?
     private var previousNetworkStats: (sent: UInt64, received: UInt64)?
+    private let loggingService = LoggingService.shared
     
     static let shared = SystemStatsService()
     
     private init() {
-        startMonitoring()
     }
     
     func startMonitoring() {
+        guard timer == nil else { return }
+
         updateStats()
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             self?.updateStats()
@@ -104,7 +106,7 @@ class SystemStatsService: ObservableObject {
             }
         }
         
-        guard result == KERN_SUCCESS else { 
+        guard result == KERN_SUCCESS else {
             return (0, "0 GB", "0 GB")
         }
         
@@ -128,8 +130,8 @@ class SystemStatsService: ObservableObject {
         // Pressure calculation: lower when there's more available memory
         let pressure = (Double(usedMemory) / Double(totalMemory)) * 100.0
         
-        // For display, show active + wired memory (what's actually in use)
-        let displayUsedMemory = activeMemory + wiredMemory
+        // For display, include compressed pages alongside active + wired memory.
+        let displayUsedMemory = activeMemory + wiredMemory + compressedMemory
         let usedGB = Double(displayUsedMemory) / 1_073_741_824 // 1024^3
         let totalGB = Double(totalMemory) / 1_073_741_824
         
@@ -157,7 +159,7 @@ class SystemStatsService: ObservableObject {
                 return String(format: "%.2f GB", gb)
             }
         } catch {
-            print("Error getting storage: \(error)")
+            loggingService.error("Error getting storage statistics", error: error)
         }
         
         return "0 GB"

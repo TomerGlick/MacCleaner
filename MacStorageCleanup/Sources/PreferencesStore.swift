@@ -1,5 +1,13 @@
 import Foundation
 
+public enum PreferencesStorageConstants {
+    public static let primaryKey = "MacStorageCleanup.UserPreferences"
+    public static let legacyEncodedPreferencesKey = "com.macstoragecleanup.preferences"
+    public static let legacyShowMenuBarIconKey = "showMenuBarIcon"
+    public static let legacyLaunchAtLoginKey = "launchAtLogin"
+    public static let legacyDebugModeKey = "debugMode"
+}
+
 /// Protocol for storing and retrieving user preferences
 public protocol PreferencesStore {
     /// Saves user preferences
@@ -15,7 +23,7 @@ public protocol PreferencesStore {
 /// UserDefaults-based implementation of PreferencesStore
 public final class UserDefaultsPreferencesStore: PreferencesStore {
     private let userDefaults: UserDefaults
-    private let preferencesKey = "com.macstoragecleanup.preferences"
+    private let preferencesKey = PreferencesStorageConstants.primaryKey
     
     public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
@@ -25,21 +33,58 @@ public final class UserDefaultsPreferencesStore: PreferencesStore {
         let encoder = JSONEncoder()
         let data = try encoder.encode(preferences)
         userDefaults.set(data, forKey: preferencesKey)
+        userDefaults.removeObject(forKey: PreferencesStorageConstants.legacyEncodedPreferencesKey)
+        userDefaults.removeObject(forKey: PreferencesStorageConstants.legacyShowMenuBarIconKey)
+        userDefaults.removeObject(forKey: PreferencesStorageConstants.legacyLaunchAtLoginKey)
+        userDefaults.removeObject(forKey: PreferencesStorageConstants.legacyDebugModeKey)
         userDefaults.synchronize()
     }
     
     public func load() throws -> UserPreferences {
-        guard let data = userDefaults.data(forKey: preferencesKey) else {
-            // Return default preferences if none exist
-            return .default
+        if let data = userDefaults.data(forKey: preferencesKey) {
+            return try decodePreferences(from: data)
         }
-        
-        let decoder = JSONDecoder()
-        return try decoder.decode(UserPreferences.self, from: data)
+
+        if let legacyData = userDefaults.data(forKey: PreferencesStorageConstants.legacyEncodedPreferencesKey) {
+            let migratedPreferences = try decodePreferences(from: legacyData)
+            try save(migratedPreferences)
+            return migratedPreferences
+        }
+
+        let migratedPreferences = mergeLegacyStandaloneValues(into: .default)
+        if migratedPreferences != .default {
+            try save(migratedPreferences)
+        }
+
+        return migratedPreferences
     }
     
     public func reset() throws {
         try save(.default)
+    }
+
+    private func decodePreferences(from data: Data) throws -> UserPreferences {
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(UserPreferences.self, from: data)
+        return mergeLegacyStandaloneValues(into: decoded)
+    }
+
+    private func mergeLegacyStandaloneValues(into preferences: UserPreferences) -> UserPreferences {
+        var merged = preferences
+
+        if let showMenuBarIcon = userDefaults.object(forKey: PreferencesStorageConstants.legacyShowMenuBarIconKey) as? Bool {
+            merged.showMenuBarIcon = showMenuBarIcon
+        }
+
+        if let launchAtLogin = userDefaults.object(forKey: PreferencesStorageConstants.legacyLaunchAtLoginKey) as? Bool {
+            merged.launchAtLogin = launchAtLogin
+        }
+
+        if let debugMode = userDefaults.object(forKey: PreferencesStorageConstants.legacyDebugModeKey) as? Bool {
+            merged.debugMode = debugMode
+        }
+
+        return merged
     }
 }
 

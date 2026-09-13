@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 /// Protocol for managing cache file identification and operations
 public protocol CacheManager {
@@ -53,9 +54,6 @@ public enum DeveloperTool: String, CaseIterable {
         case .xcodeDerivedData: return "Xcode DerivedData"
         case .xcodeArchives: return "Xcode Archives"
         case .xcodeDeviceSupport: return "iOS Device Support"
-        case .xcodeSimulators: return "Xcode Simulators"
-        case .xcodeDerivedData: return "Xcode DerivedData"
-        case .xcodeArchives: return "Xcode Archives"
         case .androidStudio: return "Android Studio"
         case .intellijIdea: return "IntelliJ IDEA"
         case .visualStudioCode: return "VS Code"
@@ -249,6 +247,7 @@ public enum Browser: String, CaseIterable {
 public class DefaultCacheManager: CacheManager {
     private let fileManager = FileManager.default
     private let safeListManager: SafeListManager
+    private let logger = Logger(subsystem: "com.macstoragecleanup.core", category: "cache")
     
     public init(safeListManager: SafeListManager = DefaultSafeListManager()) {
         self.safeListManager = safeListManager
@@ -258,16 +257,13 @@ public class DefaultCacheManager: CacheManager {
     public func findSystemCaches() async -> [FileMetadata] {
         // Use actual home directory, not sandboxed container
         let homeDir = URL(fileURLWithPath: NSHomeDirectory())
-        print("DEBUG CacheManager: NSHomeDirectory = \(NSHomeDirectory())")
-        print("DEBUG CacheManager: homeDir = \(homeDir.path)")
         
         let cachesDir = homeDir.appendingPathComponent("Library/Caches")
-        
-        print("DEBUG CacheManager: Scanning \(cachesDir.path)")
+        logger.debug("Scanning system cache directory at \(cachesDir.path, privacy: .public)")
         
         // Return top-level cache directories instead of individual files
         let results = await scanCacheDirectoriesOnly(cachesDir, fileType: .cache)
-        print("DEBUG CacheManager: Found \(results.count) cache directories")
+        logger.debug("Found \(results.count, privacy: .public) top-level cache directories")
         return results
     }
     
@@ -354,7 +350,7 @@ public class DefaultCacheManager: CacheManager {
                                 developerCaches.append(developerCache)
                             }
                         } catch {
-                            print("Error scanning AssetsV2: \(error)")
+                            logger.error("Error scanning AssetsV2 runtime assets: \(error.localizedDescription, privacy: .public)")
                         }
                         continue
                     }
@@ -388,7 +384,7 @@ public class DefaultCacheManager: CacheManager {
                                 developerCaches.append(developerCache)
                             }
                         } catch {
-                            print("Error scanning Devices: \(error)")
+                            logger.error("Error scanning CoreSimulator devices: \(error.localizedDescription, privacy: .public)")
                         }
                         continue
                     }
@@ -557,7 +553,7 @@ public class DefaultCacheManager: CacheManager {
         for item in contents {
             let range = NSRange(item.startIndex..<item.endIndex, in: item)
             if regex.firstMatch(in: item, range: range) != nil {
-                var matchedComponents = baseComponents + [item] + remainingComponents
+                let matchedComponents = baseComponents + [item] + remainingComponents
                 let matchedPath = NSString.path(withComponents: matchedComponents)
                 expandedPaths.append(matchedPath)
             }
@@ -578,7 +574,7 @@ public class DefaultCacheManager: CacheManager {
             return cacheFiles
         }
         
-        for case let fileURL as URL in enumerator {
+        while let fileURL = enumerator.nextObject() as? URL {
             // Skip if protected by safe-list
             if safeListManager.isProtected(url: fileURL) {
                 continue
@@ -605,46 +601,37 @@ public class DefaultCacheManager: CacheManager {
     /// Scan cache directory and return only top-level directories as single items
     private func scanCacheDirectoriesOnly(_ directory: URL, fileType: FileType) async -> [FileMetadata] {
         var cacheDirectories: [FileMetadata] = []
-        
-        print("DEBUG scanCacheDirectoriesOnly: Starting scan of \(directory.path)")
+        logger.debug("Scanning top-level cache directories in \(directory.path, privacy: .public)")
         
         guard let contents = try? fileManager.contentsOfDirectory(
             at: directory,
             includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
         ) else {
-            print("DEBUG scanCacheDirectoriesOnly: Failed to read directory")
+            logger.warning("Failed to read cache directory \(directory.path, privacy: .public)")
             return cacheDirectories
         }
-        
-        print("DEBUG scanCacheDirectoriesOnly: Found \(contents.count) items")
+        logger.debug("Found \(contents.count, privacy: .public) items while scanning \(directory.lastPathComponent, privacy: .public)")
         
         for itemURL in contents {
             // Check if it's a directory
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: itemURL.path, isDirectory: &isDirectory),
                   isDirectory.boolValue else {
-                print("DEBUG scanCacheDirectoriesOnly: Skipping \(itemURL.lastPathComponent) - not a directory")
                 continue
             }
             
             // Skip if protected by safe-list
             if safeListManager.isProtected(url: itemURL) {
-                print("DEBUG scanCacheDirectoriesOnly: Skipping \(itemURL.lastPathComponent) - protected")
                 continue
             }
-            
-            print("DEBUG scanCacheDirectoriesOnly: Calculating size for \(itemURL.lastPathComponent)")
             
             // Calculate total size of this cache directory
             let size = await calculateDirectorySize(itemURL)
             
-            print("DEBUG scanCacheDirectoriesOnly: \(itemURL.lastPathComponent) size = \(size)")
-            
             // Skip empty directories
-            guard size > 0 else { 
-                print("DEBUG scanCacheDirectoriesOnly: Skipping \(itemURL.lastPathComponent) - empty")
-                continue 
+            guard size > 0 else {
+                continue
             }
             
             // Get directory attributes
@@ -735,7 +722,7 @@ public class DefaultCacheManager: CacheManager {
             return totalSize
         }
         
-        for case let fileURL as URL in enumerator {
+        while let fileURL = enumerator.nextObject() as? URL {
             do {
                 let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
                 if let size = attributes[.size] as? Int64 {

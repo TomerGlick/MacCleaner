@@ -71,7 +71,8 @@ struct PreferencesWindow: View {
                     .help("Display a menu bar icon with quick access to system stats")
                 
                 Toggle("Launch at login", isOn: $viewModel.launchAtLogin)
-                    .help("Automatically start the app when you log in")
+                    .disabled(true)
+                    .help("Launch at login is temporarily disabled until system integration is wired up")
             } header: {
                 Text("Menu Bar")
                     .font(.headline)
@@ -79,6 +80,10 @@ struct PreferencesWindow: View {
             
             Section {
                 Text("The menu bar icon provides quick access to system statistics and cleanup tools without opening the main window.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Text("Launch at login is currently shown for visibility, but it is disabled until a signed-in login item integration is added.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

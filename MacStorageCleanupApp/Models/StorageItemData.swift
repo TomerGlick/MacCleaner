@@ -1,14 +1,14 @@
 import Foundation
 
 /// Represents an individual file or directory item within a storage category
-struct StorageItemData: Identifiable {
+struct StorageItemData: Identifiable, Sendable {
     let id = UUID()
     let name: String
     let path: String
     let size: Int64
     let type: ItemType
     
-    enum ItemType {
+    enum ItemType: Sendable {
         case file
         case directory
         case application

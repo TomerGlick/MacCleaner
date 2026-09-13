@@ -1,6 +1,30 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
+let coreSources = [
+    "ApplicationManager.swift",
+    "BackupManager.swift",
+    "CacheManager.swift",
+    "CleanupCategorizer.swift",
+    "CleanupEngine.swift",
+    "FileScanner.swift",
+    "PreferencesStore.swift",
+    "SafeListManager.swift",
+    "ScheduledCleanupCoordinator.swift",
+    "StorageAnalyzer.swift",
+    "Models/Application.swift",
+    "Models/AnalysisResult.swift",
+    "Models/Backup.swift",
+    "Models/CleanupCategory.swift",
+    "Models/DownloadsFileType.swift",
+    "Models/Errors.swift",
+    "Models/FileMetadata.swift",
+    "Models/LogFileInfo.swift",
+    "Models/ScanResult.swift",
+    "Models/UserPreferences.swift",
+    "Utilities/FileChecksum.swift"
+]
+
 let package = Package(
     name: "MacStorageCleanup",
     platforms: [
@@ -24,12 +48,14 @@ let package = Package(
             name: "MacStorageCleanupCore",
             dependencies: [],
             path: "Sources",
-            exclude: ["main.swift"]
+            exclude: ["main.swift"],
+            sources: coreSources
         ),
         .executableTarget(
             name: "MacStorageCleanup",
             dependencies: ["MacStorageCleanupCore"],
             path: "Sources",
+            exclude: coreSources,
             sources: ["main.swift"]
         ),
         .testTarget(

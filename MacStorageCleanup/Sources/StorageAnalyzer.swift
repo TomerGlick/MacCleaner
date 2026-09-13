@@ -87,13 +87,19 @@ public final class DefaultStorageAnalyzer: StorageAnalyzer {
     private let fileManager = FileManager.default
     private let duplicateThreshold: Int64 = 1024 * 1024 // 1MB
     private let safeListManager: SafeListManager
+    private let preferencesStore: PreferencesStore
     
-    public init(safeListManager: SafeListManager = DefaultSafeListManager()) {
+    public init(
+        safeListManager: SafeListManager = DefaultSafeListManager(),
+        preferencesStore: PreferencesStore = UserDefaultsPreferencesStore()
+    ) {
         self.safeListManager = safeListManager
+        self.preferencesStore = preferencesStore
     }
     
     public func analyze(scanResult: ScanResult) -> AnalysisResult {
         var categorizedFiles: [CleanupCategory: [FileMetadata]] = [:]
+        let categorizationOptions = currentCategorizationOptions()
         
         // Initialize all categories with empty arrays
         for category in CleanupCategory.allCases {
@@ -102,7 +108,11 @@ public final class DefaultStorageAnalyzer: StorageAnalyzer {
         
         // Categorize each file
         for file in scanResult.files {
-            let categories = categorize(file: file)
+            let categories = CleanupCategorizer.categorize(
+                file: file,
+                options: categorizationOptions,
+                safeListManager: safeListManager
+            )
             for category in categories {
                 categorizedFiles[category, default: []].append(file)
             }
@@ -126,72 +136,16 @@ public final class DefaultStorageAnalyzer: StorageAnalyzer {
     }
     
     public func categorize(file: FileMetadata) -> Set<CleanupCategory> {
-        var categories = Set<CleanupCategory>()
-        
-        let path = file.url.path
-        let pathLower = path.lowercased()
-        let ext = file.url.pathExtension.lowercased()
-        
-        // Path-based categorization for caches
-        if pathLower.contains("/library/caches/") {
-            // Determine if system or application cache
-            if pathLower.contains("/system/library/caches/") {
-                categories.insert(.systemCaches)
-            } else if pathLower.contains("/library/caches/com.apple.safari") ||
-                      pathLower.contains("/library/caches/google/chrome") ||
-                      pathLower.contains("/library/caches/firefox") ||
-                      pathLower.contains("/library/caches/microsoft edge") {
-                categories.insert(.browserCaches)
-            } else {
-                categories.insert(.applicationCaches)
-            }
-        }
-        
-        // Path-based categorization for logs
-        if pathLower.contains("/logs/") || pathLower.contains("/log/") ||
-           pathLower.contains("/var/log/") {
-            categories.insert(.logFiles)
-        }
-        
-        // Path-based categorization for temporary files
-        if pathLower.contains("/tmp") || pathLower.contains("/temp") ||
-           pathLower.hasPrefix("/tmp/") || pathLower.hasPrefix("/var/tmp/") ||
-           pathLower.contains("/application support/") && pathLower.contains("/tmp") {
-            categories.insert(.temporaryFiles)
-        }
-        
-        // Extension-based categorization for temporary files
-        if ["tmp", "temp", "cache"].contains(ext) {
-            categories.insert(.temporaryFiles)
-        }
-        
-        // Path-based categorization for downloads
-        if pathLower.contains("/downloads/") {
-            categories.insert(.downloads)
-        }
-        
-        // Size-based categorization for large files (>100MB)
-        let largeFileThreshold: Int64 = 100 * 1024 * 1024 // 100MB in bytes
-        if file.size >= largeFileThreshold {
-            categories.insert(.largeFiles)
-        }
-        
-        // Age-based categorization for old files (>365 days)
-        // Exclude system files and application bundles from old files
-        let oldFileThreshold: TimeInterval = 365 * 24 * 60 * 60 // 365 days in seconds
-        let fileAge = Date().timeIntervalSince(file.accessedDate)
-        if fileAge >= oldFileThreshold {
-            // Check if file is a system file or application bundle
-            let isSystemFile = safeListManager.isProtected(url: file.url)
-            let isApplicationBundle = ext == "app" || pathLower.contains(".app/")
-            
-            // Only categorize as old file if it's not protected
-            if !isSystemFile && !isApplicationBundle {
-                categories.insert(.oldFiles)
-            }
-        }
-        
-        return categories
+        CleanupCategorizer.categorize(
+            file: file,
+            options: currentCategorizationOptions(),
+            safeListManager: safeListManager
+        )
+    }
+
+    private func currentCategorizationOptions() -> CleanupCategorizationOptions {
+        let preferences = (try? preferencesStore.load()) ?? .default
+        return CleanupCategorizationOptions(preferences: preferences, excludeProtectedOldFiles: true)
     }
     
     public func calculateSavings(files: [FileMetadata]) -> Int64 {

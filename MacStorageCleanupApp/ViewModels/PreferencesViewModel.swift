@@ -27,25 +27,18 @@ class PreferencesViewModel: ObservableObject {
     @Published var scheduledCleanupInterval: CleanupInterval
     @Published var scheduledCategories: Set<CleanupCategory>
     
-    private let userDefaults = UserDefaults.standard
-    private let preferencesKey = "MacStorageCleanup.UserPreferences"
+    private let preferencesService: PreferencesService
     
-    init() {
-        // Load preferences from UserDefaults or use defaults
-        let loadedPreferences: UserPreferences
-        if let data = userDefaults.data(forKey: preferencesKey),
-           let decoded = try? JSONDecoder().decode(UserPreferences.self, from: data) {
-            loadedPreferences = decoded
-        } else {
-            loadedPreferences = .default
-        }
+    init(preferencesService: PreferencesService = .shared) {
+        self.preferencesService = preferencesService
+        let loadedPreferences = preferencesService.loadPreferences()
         
         // Initialize all properties first
         self.preferences = loadedPreferences
-        self.showMenuBarIcon = userDefaults.bool(forKey: "showMenuBarIcon")
-        self.launchAtLogin = userDefaults.bool(forKey: "launchAtLogin")
+        self.showMenuBarIcon = loadedPreferences.showMenuBarIcon
+        self.launchAtLogin = loadedPreferences.launchAtLogin
         self.createBackupsByDefault = loadedPreferences.createBackupsByDefault
-        self.backupLocation = NSHomeDirectory() + "/Library/Application Support/MacStorageCleanup/Backups"
+        self.backupLocation = PreferencesViewModel.defaultBackupLocation()
         self.moveToTrashByDefault = loadedPreferences.moveToTrashByDefault
         self.debugMode = loadedPreferences.debugMode
         self.oldFileThresholdDays = loadedPreferences.oldFileThresholdDays
@@ -57,6 +50,8 @@ class PreferencesViewModel: ObservableObject {
     
     func savePreferences() {
         // Update preferences from published properties
+        preferences.showMenuBarIcon = showMenuBarIcon
+        preferences.launchAtLogin = launchAtLogin
         preferences.createBackupsByDefault = createBackupsByDefault
         preferences.moveToTrashByDefault = moveToTrashByDefault
         preferences.debugMode = debugMode
@@ -65,15 +60,15 @@ class PreferencesViewModel: ObservableObject {
         preferences.enableScheduledCleanup = enableScheduledCleanup
         preferences.scheduledCleanupInterval = scheduledCleanupInterval
         preferences.scheduledCategories = validatedScheduledCategories
+        preferences = preferencesService.validatePreferences(preferences)
         
-        // Save to UserDefaults
-        if let encoded = try? JSONEncoder().encode(preferences) {
-            userDefaults.set(encoded, forKey: preferencesKey)
-        }
-        
-        // Save menu bar preferences
-        userDefaults.set(showMenuBarIcon, forKey: "showMenuBarIcon")
-        userDefaults.set(launchAtLogin, forKey: "launchAtLogin")
+        // Keep published properties aligned with any validation/clamping.
+        showMenuBarIcon = preferences.showMenuBarIcon
+        launchAtLogin = preferences.launchAtLogin
+        oldFileThresholdDays = preferences.oldFileThresholdDays
+        scheduledCategories = preferences.scheduledCategories
+
+        preferencesService.savePreferences(preferences)
         
         // Update menu bar visibility
         if showMenuBarIcon {
@@ -81,15 +76,15 @@ class PreferencesViewModel: ObservableObject {
         } else {
             MenuBarManager.shared.removeMenuBar()
         }
-        
-        // Also save debug mode separately for CleanupEngine access
-        userDefaults.set(debugMode, forKey: "debugMode")
     }
     
     func resetToDefaults() {
-        preferences = .default
+        preferencesService.resetToDefaults()
+        preferences = preferencesService.loadPreferences()
         
         // Update published properties
+        showMenuBarIcon = preferences.showMenuBarIcon
+        launchAtLogin = preferences.launchAtLogin
         createBackupsByDefault = preferences.createBackupsByDefault
         backupLocation = getBackupLocation()
         moveToTrashByDefault = preferences.moveToTrashByDefault
@@ -99,8 +94,12 @@ class PreferencesViewModel: ObservableObject {
         enableScheduledCleanup = preferences.enableScheduledCleanup
         scheduledCleanupInterval = preferences.scheduledCleanupInterval
         scheduledCategories = preferences.scheduledCategories
-        
-        savePreferences()
+
+        if showMenuBarIcon {
+            MenuBarManager.shared.setupMenuBar()
+        } else {
+            MenuBarManager.shared.removeMenuBar()
+        }
     }
     
     // MARK: - Computed Properties
@@ -133,6 +132,10 @@ class PreferencesViewModel: ObservableObject {
     // MARK: - Helper Methods
     
     private func getBackupLocation() -> String {
+        Self.defaultBackupLocation()
+    }
+
+    private static func defaultBackupLocation() -> String {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser
         let backupDir = homeDir
             .appendingPathComponent("Library")

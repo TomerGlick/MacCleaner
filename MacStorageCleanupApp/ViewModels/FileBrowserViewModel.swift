@@ -135,8 +135,6 @@ class FileBrowserViewModel: ObservableObject {
     }
     
     private static func createFileItem(from url: URL) async -> FileItem? {
-        let fileManager = FileManager.default
-        
         guard let resourceValues = try? url.resourceValues(forKeys: [
             .fileSizeKey,
             .isDirectoryKey,
@@ -188,7 +186,7 @@ class FileBrowserViewModel: ObservableObject {
                 return 0
             }
             
-            for case let fileURL as URL in enumerator {
+            while let fileURL = enumerator.nextObject() as? URL {
                 if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
                    let fileSize = resourceValues.fileSize {
                     totalSize += Int64(fileSize)

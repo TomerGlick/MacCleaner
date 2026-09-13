@@ -175,7 +175,7 @@ struct MainWindowView: View {
                         .progressViewStyle(.circular)
                     
                     Button("Cancel") {
-                        viewModel.cancelScan()
+                        viewModel.cancelStorageAnalysis()
                     }
                     .buttonStyle(.bordered)
                 }

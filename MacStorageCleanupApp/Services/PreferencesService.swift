@@ -5,25 +5,22 @@ import MacStorageCleanupCore
 class PreferencesService {
     static let shared = PreferencesService()
     
-    private let userDefaults = UserDefaults.standard
-    private let preferencesKey = "MacStorageCleanup.UserPreferences"
+    private let store: PreferencesStore
     
-    private init() {}
+    private init(store: PreferencesStore = UserDefaultsPreferencesStore()) {
+        self.store = store
+    }
     
     // MARK: - Load Preferences
     
     /// Loads user preferences from UserDefaults
     /// - Returns: Loaded preferences or default preferences if none exist
     func loadPreferences() -> UserPreferences {
-        if let data = userDefaults.data(forKey: preferencesKey),
-           let decoded = try? JSONDecoder().decode(UserPreferences.self, from: data) {
-            return decoded
+        if let loaded = try? store.load() {
+            return validatePreferences(loaded)
         }
-        
-        // Return default preferences if none exist
-        let defaultPreferences = UserPreferences.default
-        savePreferences(defaultPreferences)
-        return defaultPreferences
+
+        return .default
     }
     
     // MARK: - Save Preferences
@@ -31,18 +28,14 @@ class PreferencesService {
     /// Saves user preferences to UserDefaults
     /// - Parameter preferences: The preferences to save
     func savePreferences(_ preferences: UserPreferences) {
-        if let encoded = try? JSONEncoder().encode(preferences) {
-            userDefaults.set(encoded, forKey: preferencesKey)
-            userDefaults.synchronize()
-        }
+        try? store.save(validatePreferences(preferences))
     }
     
     // MARK: - Reset Preferences
     
     /// Resets preferences to default values
     func resetToDefaults() {
-        let defaultPreferences = UserPreferences.default
-        savePreferences(defaultPreferences)
+        try? store.reset()
     }
     
     // MARK: - Individual Preference Updates

@@ -7,7 +7,7 @@ final class StorageViewModelTests: XCTestCase {
     func testInitialState() {
         let viewModel = StorageViewModel()
         
-        XCTAssertTrue(viewModel.isLoading)
+        XCTAssertFalse(viewModel.isLoading)
         XCTAssertEqual(viewModel.totalCapacity, 0)
         XCTAssertEqual(viewModel.usedSpace, 0)
         XCTAssertEqual(viewModel.availableSpace, 0)

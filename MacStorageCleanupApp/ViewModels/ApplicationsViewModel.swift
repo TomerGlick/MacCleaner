@@ -41,12 +41,8 @@ class ApplicationsViewModel: ObservableObject {
     func loadApplications() async {
         isLoading = true
         errorMessage = nil
-        
-        do {
-            applications = await applicationManager.discoverApplications()
-        } catch {
-            errorMessage = "Failed to load applications: \(error.localizedDescription)"
-        }
+
+        applications = await applicationManager.discoverApplications()
         
         isLoading = false
     }

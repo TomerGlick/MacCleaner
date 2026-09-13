@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacStorageCleanup
+@testable import MacStorageCleanupCore
 
 /// Unit tests for SafeListManager
 final class SafeListManagerTests: XCTestCase {

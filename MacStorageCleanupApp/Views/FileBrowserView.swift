@@ -39,7 +39,7 @@ struct FileBrowserView: View {
                     
                     Button(action: {
                         Task {
-                            await viewModel.loadItems()
+                            viewModel.loadItems()
                         }
                     }) {
                         Label("Browse Files", systemImage: "folder")

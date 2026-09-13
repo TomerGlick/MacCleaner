@@ -1,6 +1,6 @@
 import XCTest
 import SwiftCheck
-@testable import MacStorageCleanup
+@testable import MacStorageCleanupCore
 
 /// Base test class for Mac Storage Cleanup tests
 final class MacStorageCleanupTests: XCTestCase {

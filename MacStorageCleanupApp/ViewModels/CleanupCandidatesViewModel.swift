@@ -69,6 +69,7 @@ class CleanupCandidatesViewModel: ObservableObject {
     }
     
     private var loadTask: Task<Void, Never>?
+    private let loggingService = LoggingService.shared
     
     // MARK: - Data Loading
     
@@ -78,12 +79,12 @@ class CleanupCandidatesViewModel: ObservableObject {
         
         loadTask = Task {
             isLoading = true
-            print("DEBUG: Starting to load candidates for category: \(selectedCategory)")
+            loggingService.debug("Starting candidate load for category \(selectedCategory.rawValue)")
             await loadRealCandidates()
             
             if !Task.isCancelled {
                 isLoading = false
-                print("DEBUG: Finished loading. Total candidates: \(candidates.count)")
+                loggingService.debug("Finished candidate load with \(candidates.count) candidates")
             }
         }
         
@@ -99,7 +100,7 @@ class CleanupCandidatesViewModel: ObservableObject {
     }
     
     func removeCleanedFiles(_ cleanedPaths: [String]) {
-        print("DEBUG: Removing \(cleanedPaths.count) cleaned files from list")
+        loggingService.debug("Removing \(cleanedPaths.count) cleaned candidates from list")
         candidates.removeAll { candidate in
             cleanedPaths.contains(candidate.path)
         }
@@ -107,15 +108,11 @@ class CleanupCandidatesViewModel: ObservableObject {
     }
     
     private func loadRealCandidates() async {
-        print("DEBUG: loadRealCandidates called")
         let coordinator = ApplicationCoordinator.shared
-        print("DEBUG: Got coordinator")
         var loadedCandidates: [CleanupCandidateData] = []
         
         switch selectedCategory {
         case .caches:
-            print("DEBUG: Loading caches...")
-            
             // Update progress as we scan
             loadingMessage = "Scanning system caches..."
             loadingProgress = 0.1
@@ -146,12 +143,10 @@ class CleanupCandidatesViewModel: ObservableObject {
             let aiResults = await coordinator.cacheManager.findAIAgentCaches()
             
             guard !Task.isCancelled else { return }
-            
-            print("DEBUG: System caches found: \(systemResults.count)")
-            print("DEBUG: App caches found: \(appResults.count)")
-            print("DEBUG: Browser caches found: \(browserResults.count)")
-            print("DEBUG: Developer caches found: \(devResults.count)")
-            print("DEBUG: AI agent caches found: \(aiResults.count)")
+
+            loggingService.debug(
+                "Cache scan results | system=\(systemResults.count) app=\(appResults.count) browser=\(browserResults.count) developer=\(devResults.count) ai=\(aiResults.count)"
+            )
             
             // Convert to CleanupCandidateData
             for cache in systemResults {

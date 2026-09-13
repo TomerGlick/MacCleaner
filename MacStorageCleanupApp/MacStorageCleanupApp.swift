@@ -76,8 +76,7 @@ struct MacStorageCleanupApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Check user preference for menu bar icon (default to true)
-        let showMenuBar = UserDefaults.standard.object(forKey: "showMenuBarIcon") as? Bool ?? true
+        let showMenuBar = PreferencesService.shared.loadPreferences().showMenuBarIcon
         
         if showMenuBar {
             // Setup menu bar

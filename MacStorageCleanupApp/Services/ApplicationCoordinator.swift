@@ -25,8 +25,7 @@ class ApplicationCoordinator: ObservableObject {
     
     let notificationService: NotificationService
     let loggingService: LoggingService
-    private let userDefaults = UserDefaults.standard
-    private let preferencesKey = "MacStorageCleanup.UserPreferences"
+    private let preferencesService: PreferencesService
     
     // MARK: - Singleton
     
@@ -35,28 +34,22 @@ class ApplicationCoordinator: ObservableObject {
     // MARK: - Initialization
     
     private init() {
-        // Load preferences
-        if let data = userDefaults.data(forKey: preferencesKey),
-           let decoded = try? JSONDecoder().decode(UserPreferences.self, from: data) {
-            self.preferences = decoded
-        } else {
-            self.preferences = .default
-        }
+        self.preferencesService = .shared
+        self.preferences = preferencesService.loadPreferences()
+        let preferencesStore = UserDefaultsPreferencesStore()
         
         // Initialize core components
         self.safeListManager = DefaultSafeListManager()
-        self.fileScanner = DefaultFileScanner(safeListManager: safeListManager)
-        self.storageAnalyzer = DefaultStorageAnalyzer()
+        self.fileScanner = DefaultFileScanner(safeListManager: safeListManager, preferencesStore: preferencesStore)
+        self.storageAnalyzer = DefaultStorageAnalyzer(safeListManager: safeListManager, preferencesStore: preferencesStore)
         self.backupManager = DefaultBackupManager()
         self.cleanupEngine = DefaultCleanupEngine(
             safeListManager: safeListManager,
-            backupManager: backupManager
+            backupManager: backupManager,
+            preferencesStore: preferencesStore
         )
         self.applicationManager = DefaultApplicationManager()
         self.cacheManager = DefaultCacheManager()
-        
-        // Initialize preferences store
-        let preferencesStore = UserDefaultsPreferencesStore()
         
         // Initialize scheduled cleanup coordinator
         self.scheduledCleanupCoordinator = BackgroundScheduledCleanupCoordinator(
@@ -89,7 +82,7 @@ class ApplicationCoordinator: ObservableObject {
                 try scheduledCleanupCoordinator.configure(preferences: preferences)
                 try scheduledCleanupCoordinator.start()
             } catch {
-                print("Failed to configure scheduled cleanup: \(error)")
+                loggingService.error("Failed to configure scheduled cleanup", error: error)
             }
         }
         
@@ -111,14 +104,12 @@ class ApplicationCoordinator: ObservableObject {
                 scheduledCleanupCoordinator.stop()
             }
         } catch {
-            print("Failed to update scheduled cleanup: \(error)")
+            loggingService.error("Failed to update scheduled cleanup", error: error)
         }
     }
     
     func savePreferences() {
-        if let encoded = try? JSONEncoder().encode(preferences) {
-            userDefaults.set(encoded, forKey: preferencesKey)
-        }
+        preferencesService.savePreferences(preferences)
     }
     
     // MARK: - Error Handling

@@ -189,9 +189,9 @@ struct CleanupCandidatesView: View {
             Text("No items found")
                 .font(.headline)
             
-            Text("Debug: isLoading=\(viewModel.isLoading), candidates=\(viewModel.candidates.count)")
+            Text(viewModel.isLoading ? "Loading cleanup candidates…" : "No cleanup candidates matched the current category or filters.")
                 .font(.caption)
-                .foregroundColor(.red)
+                .foregroundColor(.secondary)
             
             if !viewModel.searchText.isEmpty || !viewModel.selectedFileTypes.isEmpty || viewModel.minSize > 0 {
                 Button("Clear Filters") {

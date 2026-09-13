@@ -152,7 +152,7 @@ struct CandidateDetailView: View {
                     selectedPaths.contains(item.path)
                 }
             } catch {
-                print("Error deleting files: \(error)")
+                LoggingService.shared.error("Error deleting candidate detail files", error: error)
             }
         }
     }
@@ -172,7 +172,7 @@ struct CandidateDetailView: View {
         
         var items: [SubItem] = []
         
-        for case let fileURL as URL in enumerator {
+        while let fileURL = enumerator.nextObject() as? URL {
             enumerator.skipDescendants()
             
             let name = fileURL.lastPathComponent
@@ -214,7 +214,7 @@ struct CandidateDetailView: View {
         ) else { return 0 }
         
         var totalSize: Int64 = 0
-        for case let fileURL as URL in enumerator {
+        while let fileURL = enumerator.nextObject() as? URL {
             if let resourceValues = try? fileURL.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey]),
                let isDirectory = resourceValues.isDirectory,
                !isDirectory,

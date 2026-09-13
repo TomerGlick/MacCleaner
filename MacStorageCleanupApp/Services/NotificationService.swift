@@ -6,6 +6,7 @@ class NotificationService {
     static let shared = NotificationService()
     
     private let notificationCenter = UNUserNotificationCenter.current()
+    private let loggingService = LoggingService.shared
     
     private init() {}
     
@@ -33,7 +34,7 @@ class NotificationService {
         
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Failed to send notification: \(error.localizedDescription)")
+                self.loggingService.error("Failed to send scheduled cleanup completion notification", error: error)
             }
         }
     }
@@ -57,7 +58,7 @@ class NotificationService {
         
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Failed to send notification: \(error.localizedDescription)")
+                self.loggingService.error("Failed to send scheduled cleanup error notification", error: error)
             }
         }
     }
@@ -81,7 +82,7 @@ class NotificationService {
         
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Failed to send notification: \(error.localizedDescription)")
+                self.loggingService.error("Failed to send scheduled cleanup warning notification", error: error)
             }
         }
     }
@@ -109,7 +110,7 @@ class NotificationService {
         
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Failed to send notification: \(error.localizedDescription)")
+                self.loggingService.error("Failed to send notification", error: error)
             }
         }
     }

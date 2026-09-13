@@ -27,13 +27,18 @@ public protocol FileScanner {
 public final class DefaultFileScanner: FileScanner {
     private let fileManager = FileManager.default
     private let safeListManager: SafeListManager
+    private let preferencesStore: PreferencesStore
     private let batchSize = 1000
     
     private var isCancelled = false
     private let cancelQueue = DispatchQueue(label: "com.macstoragecleanup.filescanner.cancel")
     
-    public init(safeListManager: SafeListManager = DefaultSafeListManager()) {
+    public init(
+        safeListManager: SafeListManager = DefaultSafeListManager(),
+        preferencesStore: PreferencesStore = UserDefaultsPreferencesStore()
+    ) {
         self.safeListManager = safeListManager
+        self.preferencesStore = preferencesStore
     }
     
     public func scan(
@@ -54,6 +59,8 @@ public final class DefaultFileScanner: FileScanner {
         // Estimate total files for progress calculation (rough estimate)
         let totalPaths = paths.count
         var currentPathIndex = 0
+        let categorizationOptions = currentCategorizationOptions()
+        let shouldIncludeAllFiles = categories == Set(CleanupCategory.allCases)
         
         for path in paths {
             // Check for cancellation
@@ -65,6 +72,8 @@ public final class DefaultFileScanner: FileScanner {
             let (files, errors) = await scanPath(
                 path,
                 categories: categories,
+                shouldIncludeAllFiles: shouldIncludeAllFiles,
+                categorizationOptions: categorizationOptions,
                 filesScanned: &filesScanned,
                 currentPathIndex: currentPathIndex,
                 totalPaths: totalPaths,
@@ -101,6 +110,8 @@ public final class DefaultFileScanner: FileScanner {
     private func scanPath(
         _ path: URL,
         categories: Set<CleanupCategory>,
+        shouldIncludeAllFiles: Bool,
+        categorizationOptions: CleanupCategorizationOptions,
         filesScanned: inout Int,
         currentPathIndex: Int,
         totalPaths: Int,
@@ -145,7 +156,7 @@ public final class DefaultFileScanner: FileScanner {
             return ([], errors)
         }
         
-        for case let fileURL as URL in enumerator {
+        while let fileURL = enumerator.nextObject() as? URL {
             // Check for cancellation
             if checkCancelled() {
                 break
@@ -206,9 +217,20 @@ public final class DefaultFileScanner: FileScanner {
                 )
             )
             
+            filesScanned += 1
+
+            let matchedCategories = CleanupCategorizer.categorize(
+                file: metadata,
+                options: categorizationOptions,
+                safeListManager: safeListManager
+            )
+
+            guard shouldIncludeAllFiles || categories.isEmpty || !matchedCategories.isDisjoint(with: categories) else {
+                continue
+            }
+
             // Add to batch
             batch.append(metadata)
-            filesScanned += 1
             
             // Process batch when it reaches the batch size
             if batch.count >= batchSize {
@@ -292,63 +314,15 @@ public final class DefaultFileScanner: FileScanner {
     // MARK: - Public Categorization
     
     public func categorize(file: FileMetadata) -> Set<CleanupCategory> {
-        var categories = Set<CleanupCategory>()
-        
-        let path = file.url.path
-        let pathLower = path.lowercased()
-        let ext = file.url.pathExtension.lowercased()
-        
-        // Path-based categorization for caches
-        if pathLower.contains("/library/caches/") {
-            // Determine if system or application cache
-            if pathLower.contains("/system/library/caches/") {
-                categories.insert(.systemCaches)
-            } else if pathLower.contains("/library/caches/com.apple.safari") ||
-                      pathLower.contains("/library/caches/google/chrome") ||
-                      pathLower.contains("/library/caches/firefox") ||
-                      pathLower.contains("/library/caches/microsoft edge") {
-                categories.insert(.browserCaches)
-            } else {
-                categories.insert(.applicationCaches)
-            }
-        }
-        
-        // Path-based categorization for logs
-        if pathLower.contains("/logs/") || pathLower.contains("/log/") ||
-           pathLower.contains("/var/log/") {
-            categories.insert(.logFiles)
-        }
-        
-        // Path-based categorization for temporary files
-        if pathLower.contains("/tmp") || pathLower.contains("/temp") ||
-           pathLower.hasPrefix("/tmp/") || pathLower.hasPrefix("/var/tmp/") ||
-           pathLower.contains("/application support/") && pathLower.contains("/tmp") {
-            categories.insert(.temporaryFiles)
-        }
-        
-        // Extension-based categorization for temporary files
-        if ["tmp", "temp", "cache"].contains(ext) {
-            categories.insert(.temporaryFiles)
-        }
-        
-        // Path-based categorization for downloads
-        if pathLower.contains("/downloads/") {
-            categories.insert(.downloads)
-        }
-        
-        // Size-based categorization for large files (>100MB)
-        let largeFileThreshold: Int64 = 100 * 1024 * 1024 // 100MB in bytes
-        if file.size >= largeFileThreshold {
-            categories.insert(.largeFiles)
-        }
-        
-        // Age-based categorization for old files (>365 days)
-        let oldFileThreshold: TimeInterval = 365 * 24 * 60 * 60 // 365 days in seconds
-        let fileAge = Date().timeIntervalSince(file.accessedDate)
-        if fileAge >= oldFileThreshold {
-            categories.insert(.oldFiles)
-        }
-        
-        return categories
+        CleanupCategorizer.categorize(
+            file: file,
+            options: currentCategorizationOptions(),
+            safeListManager: safeListManager
+        )
+    }
+
+    private func currentCategorizationOptions() -> CleanupCategorizationOptions {
+        let preferences = (try? preferencesStore.load()) ?? .default
+        return CleanupCategorizationOptions(preferences: preferences)
     }
 }

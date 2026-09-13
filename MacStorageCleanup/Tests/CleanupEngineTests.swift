@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacStorageCleanup
+@testable import MacStorageCleanupCore
 
 final class CleanupEngineTests: XCTestCase {
     var tempDirectory: URL!
