@@ -10,6 +10,9 @@ struct CleanupCandidateData: Identifiable {
     let accessedDate: Date
     let fileType: FileType
     let category: CleanupCategoryType
+    /// Display grouping label for this candidate (e.g. "Xcode Simulators", "Google", "Other Caches").
+    /// Defaults to the item's own name when no specific grouping applies.
+    var groupLabel: String? = nil
     var isSelected: Bool = false
     
     enum FileType: String {

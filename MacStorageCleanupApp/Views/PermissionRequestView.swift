@@ -91,24 +91,10 @@ struct PermissionRequestView: View {
     
     private func checkPermission() {
         isChecking = true
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            hasPermission = checkFullDiskAccess()
+            hasPermission = FullDiskAccessDetector.hasAccess()
             isChecking = false
-        }
-    }
-    
-    private func checkFullDiskAccess() -> Bool {
-        // Try to access a protected directory
-        let testPath = NSHomeDirectory() + "/Library/Safari"
-        let fileManager = FileManager.default
-        
-        // Try to list contents of Safari directory
-        do {
-            _ = try fileManager.contentsOfDirectory(atPath: testPath)
-            return true
-        } catch {
-            return false
         }
     }
 }

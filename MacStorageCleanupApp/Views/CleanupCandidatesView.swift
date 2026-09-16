@@ -5,6 +5,8 @@ struct CleanupCandidatesView: View {
     @ObservedObject var storageViewModel: StorageViewModel
     @State private var showingFilters = false
     @State private var showingPreview = false
+    @State private var expandedGroups: Set<String> = []
+    @State private var hasInitializedGroupExpansion = false
     
     init(category: CleanupCandidateData.CleanupCategoryType, storageViewModel: StorageViewModel) {
         _viewModel = StateObject(wrappedValue: CleanupCandidatesViewModel(category: category))
@@ -159,24 +161,98 @@ struct CleanupCandidatesView: View {
     
     private var fileListView: some View {
         ScrollView {
-            LazyVStack(spacing: 1) {
-                ForEach(viewModel.filteredCandidates) { candidate in
-                    HStack(spacing: 0) {
-                        CleanupCandidateRowView(
-                            candidate: candidate,
-                            onToggle: { viewModel.toggleSelection(for: candidate) }
-                        )
-                        
-                        // Drill-down button
-                        NavigationLink(destination: CandidateDetailView(candidate: candidate, viewModel: viewModel)) {
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 12)
+            LazyVStack(alignment: .leading, spacing: 1, pinnedViews: [.sectionHeaders]) {
+                ForEach(viewModel.groupedCandidates, id: \.label) { group in
+                    if !group.label.isEmpty {
+                        Section {
+                            if expandedGroups.contains(group.label) {
+                                candidateRows(for: group.items)
+                            }
+                        } header: {
+                            groupHeader(label: group.label, items: group.items)
                         }
-                        .buttonStyle(.plain)
+                    } else {
+                        candidateRows(for: group.items)
                     }
                 }
             }
+        }
+        .onAppear { initializeGroupExpansionIfNeeded() }
+        .onChange(of: viewModel.groupedCandidates.map(\.label)) { _ in
+            initializeGroupExpansionIfNeeded()
+        }
+    }
+    
+    /// Defaults the first group to expanded and all others to collapsed, but only the
+    /// first time groups become available for this scan (so user toggles aren't reset
+    /// on every unrelated view update).
+    private func initializeGroupExpansionIfNeeded() {
+        guard !hasInitializedGroupExpansion else { return }
+        let labels = viewModel.groupedCandidates.map(\.label).filter { !$0.isEmpty }
+        guard !labels.isEmpty else { return }
+        
+        if let firstLabel = labels.first {
+            expandedGroups = [firstLabel]
+        }
+        hasInitializedGroupExpansion = true
+    }
+    
+    private func candidateRows(for items: [CleanupCandidateData]) -> some View {
+        ForEach(items) { candidate in
+            HStack(spacing: 0) {
+                CleanupCandidateRowView(
+                    candidate: candidate,
+                    onToggle: { viewModel.toggleSelection(for: candidate) }
+                )
+                
+                // Drill-down button
+                NavigationLink(destination: CandidateDetailView(candidate: candidate, viewModel: viewModel)) {
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 12)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+    
+    private func groupHeader(label: String, items: [CleanupCandidateData]) -> some View {
+        let totalSize = items.reduce(Int64(0)) { $0 + $1.size }
+        let isExpanded = expandedGroups.contains(label)
+        return Button(action: { toggleGroupExpansion(label) }) {
+            HStack {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                
+                Text(label)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Text("(\(items.count))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text(ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file))
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+    
+    private func toggleGroupExpansion(_ label: String) {
+        if expandedGroups.contains(label) {
+            expandedGroups.remove(label)
+        } else {
+            expandedGroups.insert(label)
         }
     }
     
@@ -231,20 +307,28 @@ struct CleanupCandidatesView: View {
 }
 
 struct RotatingMagnifierView: View {
-    @State private var isRotating = false
+    @State private var isOrbiting = false
+    private let orbitRadius: CGFloat = 20
+    private let orbitSize: CGFloat = 24
     
     var body: some View {
-        Image(systemName: "magnifyingglass")
-            .font(.system(size: 24))
-            .foregroundColor(.blue)
-            .offset(y: -30)
-            .rotationEffect(.degrees(isRotating ? 360 : 0), anchor: .center)
-            .rotationEffect(.degrees(isRotating ? -360 : 0))
-            .onAppear {
-                withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
-                    isRotating = true
-                }
+        ZStack {
+            Color.clear
+                .frame(width: orbitRadius * 2 + orbitSize, height: orbitRadius * 2 + orbitSize)
+            
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: orbitSize))
+                .foregroundColor(.blue)
+                // Counter-rotate so the glyph itself never spins, only its position orbits
+                .rotationEffect(.degrees(isOrbiting ? -360 : 0))
+                .offset(y: -orbitRadius)
+        }
+        .rotationEffect(.degrees(isOrbiting ? 360 : 0))
+        .onAppear {
+            withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false)) {
+                isOrbiting = true
             }
+        }
     }
 }
 

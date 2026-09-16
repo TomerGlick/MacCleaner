@@ -1,116 +1,75 @@
-# Task 17.1 Implementation Summary
+# Mac Storage Cleanup Implementation Summary
+
+_Last updated: 2026-09-13_
 
 ## Overview
 
-Successfully implemented the main window with storage visualization for the Mac Storage Cleanup application.
+This document summarizes the current app implementation after completing roadmap phases 1 through 4 and the remaining Phase 5 polish.
 
-## Components Created
+## Completed implementation milestones
 
-### 1. Application Entry Point
-- **MacStorageCleanupApp.swift**: Main app structure with WindowGroup configuration
+## Phase 1: correctness and lifecycle cleanup
 
-### 2. Views
-- **MainWindowView.swift**: Main container view with header, visualization, and category breakdown
-- **StorageHeaderView.swift**: Header displaying total capacity, used space, and available space with percentages
-- **StorageVisualizationView.swift**: Chart visualization (pie chart for macOS 14+, bar chart for macOS 13)
-- **CategoryBreakdownView.swift**: Detailed list of storage categories with progress bars
+- Made `MenuBarManager.setupMenuBar()` idempotent.
+- Prevented duplicate stats timers in `SystemStatsService`.
+- Aligned `showMenuBarIcon` default handling.
+- Corrected app test expectation in `StorageViewModelTests`.
 
-### 3. ViewModels
-- **StorageViewModel.swift**: Business logic for loading and managing storage data
-  - Fetches disk space information using FileManager
-  - Calculates storage breakdown by category
-  - Provides formatted strings for display
-  - Computes percentages for visualization
+## Phase 2: shared preferences and configuration
 
-### 4. Models
-- **StorageCategoryData.swift**: Data structure representing a storage category with size, percentage, and color
+- Unified app/core preference persistence through `PreferencesStore`.
+- Added migration for legacy preference keys.
+- Routed cleanup debug behavior through shared preferences.
+- Updated `ApplicationCoordinator` and `PreferencesViewModel` to use shared paths.
 
-### 5. Project Configuration
-- **MacStorageCleanupApp.xcodeproj**: Xcode project file
-- **Info.plist**: App metadata and configuration
-- **MacStorageCleanupApp.entitlements**: App sandbox entitlements
+## Phase 3: storage analysis refactor
 
-## Features Implemented
+- Reduced `StorageViewModel` responsibility by extracting services.
+- Added `StorageAnalysisService` for category summaries and details.
+- Added actor-backed `StorageInspectionService` for filesystem inspection.
+- Added session-scoped caches to reduce repeated directory walks.
+- Separated cancellation semantics for storage analysis vs cleanup scanning.
 
-✅ **Storage Visualization**
-- Pie chart visualization (macOS 14+) with donut style
-- Bar chart fallback (macOS 13)
-- Color-coded categories
-- Interactive legend
+## Phase 4: categorization and core logic cleanup
 
-✅ **Storage Statistics Display**
-- Total capacity in GB
-- Used space with percentage
-- Available space with percentage
-- Real-time updates
+- Centralized categorization rules in `CleanupCategorizer`.
+- Switched scanner/analyzer thresholds to preference-driven configuration.
+- Added focused `CleanupCategorizerTests` edge-case coverage.
 
-✅ **Category Breakdown**
-- Applications
-- Documents
-- System
-- Caches
-- Other (extensible)
+## Phase 5: UX and documentation follow-through
 
-✅ **Display Formats**
-- Absolute sizes using ByteCountFormatter (GB, MB, etc.)
-- Percentages with one decimal place
-- Color-coded visual indicators
-- Progress bars for each category
+- Replaced runtime `print` debugging with structured logging in active paths.
+- Kept launch-at-login UI disabled until system integration is wired.
+- Reviewed Full Disk Access detection and moved checks to shared detector logic.
+- Refreshed top-level and app architecture documentation.
 
-## Requirements Satisfied
+## Full Disk Access flow
 
-- ✅ **Requirement 8.1**: Visual breakdown of storage by category
-- ✅ **Requirement 8.2**: Display both absolute sizes and percentages
-- ✅ **Requirement 8.5**: Display total capacity, used space, and available space prominently
+`FullDiskAccessDetector` is used by both app startup and permission re-check actions.
 
-## Technical Details
+Probe order:
+1. `~/Library/Safari`
+2. `~/Library/Mail`
+3. `~/Library/Messages`
 
-### Architecture
-- **Pattern**: MVVM (Model-View-ViewModel)
-- **UI Framework**: SwiftUI with AppKit window
-- **Charts**: Swift Charts framework
-- **Minimum OS**: macOS 13.0
-- **Optimal OS**: macOS 14.0+ (for pie charts)
+Behavior:
+- If a protected directory is readable, access is treated as granted.
+- If access is explicitly denied with no-permission error, access is denied.
+- If no probe directories are present, status is treated as undetermined and startup is allowed.
 
-### Storage Calculation
-Currently calculates storage by scanning common directories:
-- `/Applications` and `~/Applications` for Applications
-- `~/Documents` for Documents
-- `~/Library/Caches` for Caches
-- Remaining space estimated as System
+## Current module boundaries
 
-### Future Integration
-The app is designed to integrate with the `MacStorageCleanupCore` library:
-- `FileScanner` for comprehensive file system scanning
-- `StorageAnalyzer` for detailed categorization
-- `CleanupEngine` for cleanup operations
+- `MacStorageCleanupCore` (Swift package)
+  - scanning, categorization, cleanup execution, backups, safe-list handling
+- `MacStorageCleanupApp` (SwiftUI shell)
+  - screens, view models, app services, system integrations
 
-## Build Instructions
+## Validation baseline
 
-```bash
-# Build from command line
-xcodebuild -project MacStorageCleanupApp.xcodeproj \
-  -scheme MacStorageCleanupApp \
-  -configuration Debug \
-  build
+Recent validation performed in this workspace:
 
-# Or open in Xcode
-open MacStorageCleanupApp.xcodeproj
-```
+- `xcodebuild clean build -project MacStorageCleanupApp.xcodeproj -scheme MacStorageCleanupApp -destination 'platform=macOS' | cat`
+- `swift test --filter CleanupCategorizerTests | cat` (from `MacStorageCleanup/`)
+- `swift test | cat` (from `MacStorageCleanup/`)
 
-## Testing
-
-Basic unit tests created for StorageViewModel:
-- Initial state verification
-- Formatted value generation
-- Percentage calculations
-- Zero capacity edge case
-- Async data loading
-
-## Next Steps
-
-Task 17.2 will implement:
-- Drill-down navigation into categories
-- Subcategory views
-- Individual large items display
-- Real-time updates during cleanup operations
+At the time of these validations, app build and package tests were passing.

@@ -24,6 +24,9 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Temporary Files** - Delete temporary files and logs
 - **Large Files** - Find and manage files over 100MB
 - **Old Files** - Identify files not accessed in over a year
+- **Duplicate Files** - Detect identical copies across Documents, Desktop, Downloads, and Movies
+- **Downloads Cleanup** - Review your Downloads folder grouped by type (documents, images, archives, installers)
+- **Log Files** - Clear accumulated application and system logs
 
 ### 🛡️ Safety First
 - **Safe List Protection** - Critical system files are automatically protected
@@ -33,6 +36,9 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Preview Before Cleanup** - Review exactly what will be deleted
 - **Drill-Down Navigation** - Explore folder contents and select individual files
 - **Show in Finder** - Right-click any item to reveal it in Finder
+- **Vendor Grouping** - Cache candidates are collapsed into named groups (Google, Apple, JetBrains, Microsoft, Adobe, Mozilla, Dropbox, Slack, Zoom, Spotify) with item counts and group totals
+- **"Other Caches" Bucket** - Small, unrecognized cache folders are collected into a single group instead of flooding the list
+- **Overlap Detection** - Nested paths are suppressed so a tool's cache is not listed twice under two different groups
 
 ### 📊 Storage Analysis
 - **Visual Storage Breakdown** - See what's taking up space with interactive pie chart
@@ -55,7 +61,7 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 
 ### ⚙️ Advanced Features
 - **Scheduled Cleanup** - Automatic cleanup on daily, weekly, or monthly basis
-- **Customizable Thresholds** - Set your own definitions for "large" and "old" files
+- **Customizable Thresholds** - Set your own definitions for "large" and "old" files; thresholds are read from preferences by both the scanner and the analyzer
 - **Selective Cleanup** - Choose exactly what to clean
 - **Application Management** - Uninstall apps with associated files
 - **Backup Management** - Restore from previous cleanup backups
@@ -110,6 +116,12 @@ The app requires the following permissions to function properly:
   - Go to System Settings > Privacy & Security > Full Disk Access
   - Add Mac Storage Cleanup to the list
   - The app will prompt you on first launch if this permission is not granted
+
+Permission detection runs through a single shared probe (`FullDiskAccessDetector`) used by both app
+startup and the permission re-check screen. It probes `~/Library/Safari`, `~/Library/Mail`, and
+`~/Library/Messages`: a successful read means granted, an explicit permission error means denied, and
+an inconclusive result (none of those directories present) lets the app start rather than blocking it
+— individual operations then surface permission failures as they occur.
 
 ## ⚠️ Important Safety Information
 
@@ -169,8 +181,9 @@ To enable/disable the menu bar icon:
 ### Quick Start
 
 1. **Launch the app** and grant Full Disk Access permission when prompted
-2. **Scan Your Mac** - Click the menu icon and select "Scan Storage"
-3. **Review Results** - Browse the cleanup candidates by category
+2. **Scan Your Mac** - Press **Start Scan** (the scan can be cancelled while it runs)
+3. **Review Results** - Browse cleanup candidates by category; cache results arrive grouped by vendor,
+   with the first group expanded and each header showing item count and total size
 4. **Select Items** - Choose what you want to clean (or drill down into folders)
 5. **Clean Up** - Click "Clean Up Selected" and confirm
 
@@ -206,26 +219,41 @@ The project is organized into two main components:
 - **FileScanner** - Scans filesystem for cleanup candidates
 - **CacheManager** - Manages cache discovery and cleanup
 - **CleanupEngine** - Handles safe file deletion with rollback
+- **CleanupCategorizer** - Single shared source of categorization rules, used by both the scanner and
+  the storage analyzer so the two can never disagree about what a file is
 - **SafeListManager** - Protects critical system files
 - **BackupManager** - Creates and manages backups
 - **ApplicationManager** - Discovers and uninstalls applications
+- **PreferencesStore** - One persistence path for all settings, including migration of legacy
+  standalone `UserDefaults` keys
 
 ### MacStorageCleanupApp (UI)
 - **SwiftUI Views** - Modern, native macOS interface
 - **ViewModels** - MVVM architecture for clean separation
-- **Services** - Logging, notifications, and coordination
+- **StorageAnalysisService** - Owns storage analysis passes, with cancellation kept separate from
+  cleanup scans so stopping one does not abort the other
+- **StorageInspectionService** - Directory sizing and detail loading, with session-scoped caching to
+  avoid repeated walks over the same tree
+- **Services** - Structured logging, notifications, preferences, menu bar, and coordination
 
 ## 🧪 Testing
 
 The project includes comprehensive unit tests:
 
 ```bash
-# Run all tests
-xcodebuild test -scheme MacStorageCleanupApp
+# Run the core library test suite
+cd MacStorageCleanup && swift test
 
-# Run specific test suite
-xcodebuild test -scheme MacStorageCleanup -only-testing:CacheManagerTests
+# Build the core library
+cd MacStorageCleanup && swift build
+
+# Run app tests through Xcode
+xcodebuild test -scheme MacStorageCleanupApp
 ```
+
+Categorization edge cases are covered in `CleanupCategorizerTests` — case-insensitive browser cache
+detection, Application Support temporary paths, deterministic age thresholds, and protected/app-bundle
+exclusions from old-file sweeps.
 
 ## 🤝 Contributing
 
@@ -261,12 +289,15 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 ## 🗺️ Roadmap
 
 - [x] Menu bar system monitor with real-time stats
-- [ ] Duplicate file finder
-- [ ] Download folder cleanup
+- [x] Duplicate file finder
+- [x] Download folder cleanup
+- [x] Shared categorization rules between scanner and analyzer
+- [x] Unified preference persistence with legacy key migration
+- [x] Structured logging in place of `print` debugging
 - [ ] Smart recommendations based on usage patterns
 - [ ] Export cleanup reports
 - [ ] Localization support
-- [ ] Launch at login option
+- [ ] Launch at login option (control is present but disabled until wired up)
 
 ---
 

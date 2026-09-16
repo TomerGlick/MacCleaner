@@ -1,126 +1,86 @@
 # Mac Storage Cleanup App Structure
 
-## Directory Layout
+## Directory layout
 
-```
+```text
 MacStorageCleanupApp/
-├── MacStorageCleanupApp.swift          # App entry point
-├── Info.plist                          # App configuration
-├── MacStorageCleanupApp.entitlements   # Sandbox permissions
-├── Views/
-│   ├── MainWindowView.swift            # Main container
-│   ├── StorageHeaderView.swift         # Statistics header
-│   ├── StorageVisualizationView.swift  # Chart visualization
-│   └── CategoryBreakdownView.swift     # Category list
-├── ViewModels/
-│   └── StorageViewModel.swift          # Business logic
-├── Models/
-│   └── StorageCategoryData.swift       # Category data model
-├── Tests/
-│   └── StorageViewModelTests.swift     # Unit tests
-├── README.md                           # Documentation
-├── IMPLEMENTATION.md                   # Implementation details
-└── STRUCTURE.md                        # This file
-
-MacStorageCleanupApp.xcodeproj/
-└── project.pbxproj                     # Xcode project file
+|-- MacStorageCleanupApp.swift
+|-- Info.plist
+|-- MacStorageCleanupApp.entitlements
+|-- Assets.xcassets/
+|-- Models/
+|   |-- CleanupCandidateData.swift
+|   |-- StorageCategoryData.swift
+|   `-- StorageItemData.swift
+|-- Services/
+|   |-- ApplicationCoordinator.swift
+|   |-- LoggingService.swift
+|   |-- MenuBarManager.swift
+|   |-- NotificationService.swift
+|   |-- PreferencesService.swift
+|   |-- StorageAnalysisService.swift
+|   |-- StorageInspectionService.swift
+|   `-- SystemStatsService.swift
+|-- ViewModels/
+|   |-- StorageViewModel.swift
+|   |-- CleanupCandidatesViewModel.swift
+|   |-- CleanupPreviewViewModel.swift
+|   |-- CleanupProgressViewModel.swift
+|   |-- CleanupResultsViewModel.swift
+|   |-- PreferencesViewModel.swift
+|   |-- FileBrowserViewModel.swift
+|   |-- ApplicationsViewModel.swift
+|   |-- ApplicationUninstallViewModel.swift
+|   `-- BackupManagementViewModel.swift
+|-- Views/
+|   |-- MainWindowView.swift
+|   |-- PermissionRequestView.swift
+|   |-- PreferencesView.swift
+|   |-- PreferencesWindow.swift
+|   |-- StorageHeaderView.swift
+|   |-- StorageVisualizationView.swift
+|   |-- CategoryBreakdownView.swift
+|   |-- CategoryDetailView.swift
+|   |-- ScanView.swift
+|   |-- CleanupCandidatesView.swift
+|   |-- CleanupPreviewView.swift
+|   |-- CleanupProgressView.swift
+|   |-- CleanupResultsView.swift
+|   |-- FileBrowserView.swift
+|   |-- ApplicationsListView.swift
+|   |-- ApplicationUninstallView.swift
+|   |-- BackupManagementView.swift
+|   `-- StatusMenuView.swift
+`-- Tests/
+    |-- StorageViewModelTests.swift
+    |-- CleanupProgressViewModelTests.swift
+    |-- CleanupResultsViewModelTests.swift
+    `-- CleanupCandidatesViewModelTests.swift
 ```
 
-## UI Layout
+## Runtime flow
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Mac Storage Cleanup                                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Total Capacity    Used Space         Available Space          │
-│  500 GB            350 GB (70%)       150 GB (30%)             │
-│                                                                 │
-├─────────────────────────────────────────┬───────────────────────┤
-│                                         │  Categories           │
-│   Storage Breakdown                     │                       │
-│                                         │  ● Applications       │
-│        ╭─────────────╮                  │    100 GB    20%     │
-│       ╱               ╲                 │    ████░░░░░░░       │
-│      │    Pie Chart    │                │                       │
-│      │   Visualization │                │  ● Documents          │
-│       ╲               ╱                 │    80 GB     16%     │
-│        ╰─────────────╯                  │    ███░░░░░░░░       │
-│                                         │                       │
-│   ■ Applications  ■ Documents           │  ● System             │
-│   ■ System        ■ Caches              │    120 GB    24%     │
-│   ■ Other                               │    █████░░░░░░       │
-│                                         │                       │
-│                                         │  ● Caches             │
-│                                         │    30 GB     6%      │
-│                                         │    █░░░░░░░░░░       │
-│                                         │                       │
-│                                         │  ● Other              │
-│                                         │    20 GB     4%      │
-│                                         │    █░░░░░░░░░░       │
-└─────────────────────────────────────────┴───────────────────────┘
-```
+1. `MacStorageCleanupApp` evaluates Full Disk Access via `FullDiskAccessDetector`.
+2. If access is denied, `PermissionRequestView` is shown.
+3. If access is available (or check is inconclusive), `MainWindowView` is shown.
+4. `StorageViewModel` orchestrates storage loading and cleanup scan actions.
+5. `StorageAnalysisService` computes category totals/details.
+6. `StorageInspectionService` performs directory walks with per-session caching.
+7. `ApplicationCoordinator` bridges UI actions to `MacStorageCleanupCore` operations.
 
-## Data Flow
+## Responsibilities
 
-```
-User Opens App
-     │
-     ▼
-MainWindowView
-     │
-     ├─► StorageHeaderView ──► StorageViewModel
-     │                              │
-     ├─► StorageVisualizationView ──┤
-     │                              │
-     └─► CategoryBreakdownView ─────┘
-                                    │
-                                    ▼
-                            loadStorageData()
-                                    │
-                                    ├─► FileManager (disk info)
-                                    │
-                                    └─► calculateCategoryBreakdown()
-                                            │
-                                            ├─► /Applications
-                                            ├─► ~/Documents
-                                            ├─► ~/Library/Caches
-                                            └─► System (estimated)
-```
+- `Services/`
+  - App-level integrations and cross-cutting concerns (logging, notifications, menu bar, preferences, coordination).
+- `ViewModels/`
+  - UI state and task orchestration.
+  - Cancellation boundaries for storage analysis and scan flows.
+- `Views/`
+  - Presentation and user interaction.
+- `Models/`
+  - App-facing data structs for storage and cleanup screens.
 
-## Component Responsibilities
+## Notes
 
-### Views (SwiftUI)
-- **MainWindowView**: Layout and composition
-- **StorageHeaderView**: Display statistics
-- **StorageVisualizationView**: Render charts
-- **CategoryBreakdownView**: List categories
-
-### ViewModel
-- **StorageViewModel**: 
-  - Fetch disk information
-  - Calculate category sizes
-  - Format display values
-  - Manage loading state
-
-### Models
-- **StorageCategoryData**:
-  - Category name
-  - Size in bytes
-  - Percentage calculation
-  - Color assignment
-  - Formatted display
-
-## Integration Points
-
-### Current
-- FileManager for disk space
-- Directory size calculation
-- ByteCountFormatter for display
-
-### Future (with MacStorageCleanupCore)
-- FileScanner for comprehensive scanning
-- StorageAnalyzer for categorization
-- CleanupEngine for operations
-- CacheManager for cache detection
-- ApplicationManager for app info
+- Launch-at-login UI is currently disabled until login item integration is implemented.
+- Storage analysis and cleanup scans are intentionally cancellable through separate view model pathways.

@@ -47,9 +47,9 @@ _Last updated: 2026-09-13_
 
 ## Phase 5 — Logging, UX, and Docs
 - [x] Replace `print` debugging with structured logging
-- [ ] Review Full Disk Access detection flow
+- [x] Review Full Disk Access detection flow
 - [x] Implement or disable `Launch at login` until wired up
-- [ ] Refresh `README.md`, `STRUCTURE.md`, and implementation docs
+- [x] Refresh `README.md`, `STRUCTURE.md`, and implementation docs
 
 ## Phase 1 Work Log
 - 2026-09-13: Verified repository already initialized; began first implementation batch.
@@ -63,3 +63,5 @@ _Last updated: 2026-09-13_
 - 2026-09-13: Rebuilt the `MacStorageCleanupApp` Xcode scheme successfully after the preference, logging, and warning cleanup changes.
 - 2026-09-13: Completed the Phase 3 storage analysis refactor by extracting dedicated storage inspection/analysis services, separating analysis cancellation from cleanup scans, and adding session-scoped caching for repeated directory sizing and detail loading.
 - 2026-09-13: Completed Phase 4 by adding focused shared categorization edge-case tests covering case-insensitive browser cache detection, Application Support temporary paths, deterministic age thresholds, and protected/app-bundle old-file exclusions.
+- 2026-09-13: Reviewed and consolidated Full Disk Access detection into a shared probe used by both app startup and permission re-check flows, with better handling for inconclusive probe states.
+- 2026-09-13: Refreshed top-level and app implementation documentation (`README.md`, `MacStorageCleanupApp/STRUCTURE.md`, and `MacStorageCleanupApp/IMPLEMENTATION.md`) to match current architecture and roadmap progress.

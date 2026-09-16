@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 // Window manager to handle window state
 class WindowManager: ObservableObject {
@@ -11,6 +12,67 @@ class WindowManager: ObservableObject {
     }
 }
 
+/// A lightweight Full Disk Access probe shared by app launch and permission re-check UI.
+enum FullDiskAccessStatus {
+    case granted
+    case denied
+    case undetermined
+}
+
+enum FullDiskAccessDetector {
+    private static var protectedDirectoryCandidates: [URL] {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            home.appendingPathComponent("Library/Safari"),
+            home.appendingPathComponent("Library/Mail"),
+            home.appendingPathComponent("Library/Messages")
+        ]
+    }
+
+    static func currentStatus(fileManager: FileManager = .default) -> FullDiskAccessStatus {
+        var foundProtectedDirectory = false
+
+        for directory in protectedDirectoryCandidates {
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+                continue
+            }
+
+            foundProtectedDirectory = true
+
+            do {
+                _ = try fileManager.contentsOfDirectory(
+                    at: directory,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                )
+                return .granted
+            } catch let error as NSError {
+                if error.domain == NSCocoaErrorDomain && error.code == NSFileReadNoPermissionError {
+                    return .denied
+                }
+            } catch {
+                continue
+            }
+        }
+
+        return foundProtectedDirectory ? .denied : .undetermined
+    }
+
+    static func hasAccess(fileManager: FileManager = .default) -> Bool {
+        switch currentStatus(fileManager: fileManager) {
+        case .granted:
+            return true
+        case .denied:
+            return false
+        case .undetermined:
+            // Some systems may not have all probe directories populated; avoid blocking startup on inconclusive checks.
+            LoggingService.shared.warning("Full Disk Access check was inconclusive; allowing app startup and deferring permission failures to runtime operations.")
+            return true
+        }
+    }
+}
+
 @main
 struct MacStorageCleanupApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -19,8 +81,8 @@ struct MacStorageCleanupApp: App {
     
     init() {
         // Check for full disk access
-        _hasFullDiskAccess = State(initialValue: checkFullDiskAccess())
-        
+        _hasFullDiskAccess = State(initialValue: FullDiskAccessDetector.hasAccess())
+
         // Request notification permissions on app launch
         Task {
             try? await NotificationService.shared.requestAuthorization()
@@ -56,20 +118,6 @@ struct MacStorageCleanupApp: App {
         
         Settings {
             PreferencesView()
-        }
-    }
-    
-    private func checkFullDiskAccess() -> Bool {
-        // Try to access a protected directory
-        let testPath = NSHomeDirectory() + "/Library/Safari"
-        let fileManager = FileManager.default
-        
-        // Try to list contents of Safari directory
-        do {
-            _ = try fileManager.contentsOfDirectory(atPath: testPath)
-            return true
-        } catch {
-            return false
         }
     }
 }
