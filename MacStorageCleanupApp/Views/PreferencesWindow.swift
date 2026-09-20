@@ -44,7 +44,12 @@ struct PreferencesWindow: View {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(width: 600, height: 550)
+        // A TabView presented in a sheet gets no inset of its own, so the tab bar sat
+        // flush against the window edge and clipped. The Settings scene insets it for us;
+        // this makes the sheet match.
+        .padding(.top, 12)
+        .frame(width: 600)
+        .frame(minHeight: 560)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {

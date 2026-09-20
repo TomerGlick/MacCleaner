@@ -29,7 +29,12 @@ struct CleanupProgressView: View {
             // Footer with cancel button
             footerView
         }
-        .frame(width: 600, height: 400)
+        // minHeight, not a fixed height: the content's own minimum (a 48pt percentage,
+        // the progress bar, the current-file chip, the stats row and an optional error
+        // line) comes to almost exactly 400pt, so a fixed 400 clipped the title and the
+        // Cancel button off the top and bottom edges. A floor lets the sheet grow instead.
+        .frame(width: 600)
+        .frame(minHeight: 480)
         .onAppear {
             viewModel.startCleanup()
         }
