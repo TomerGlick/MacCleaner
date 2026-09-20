@@ -46,7 +46,7 @@ find . -name "DerivedData" -exec rm -rf {} +
 
 ### 7. Initialize Git Repository
 ```bash
-cd /Users/tomer/Develop/MacCleaner
+cd /path/to/MacCleaner
 git init
 git add .
 git commit -m "Initial commit: Mac Storage Cleanup v1.0.0"

@@ -6,6 +6,13 @@ public enum PreferencesStorageConstants {
     public static let legacyShowMenuBarIconKey = "showMenuBarIcon"
     public static let legacyLaunchAtLoginKey = "launchAtLogin"
     public static let legacyDebugModeKey = "debugMode"
+
+    /// The bundle identifier the app shipped under up to 1.3.0.
+    ///
+    /// `UserDefaults.standard` is keyed by bundle identifier, so renaming the bundle moves
+    /// the whole preferences domain and a returning user would silently find every setting
+    /// back at its default. Their old domain is read once and copied forward.
+    public static let legacyBundleDomain = "com.example.MacStorageCleanup"
 }
 
 /// Protocol for storing and retrieving user preferences
@@ -23,10 +30,16 @@ public protocol PreferencesStore {
 /// UserDefaults-based implementation of PreferencesStore
 public final class UserDefaultsPreferencesStore: PreferencesStore {
     private let userDefaults: UserDefaults
+    /// The pre-rename preferences domain, read only when the current one is empty.
+    private let legacyDomainDefaults: UserDefaults?
     private let preferencesKey = PreferencesStorageConstants.primaryKey
-    
-    public init(userDefaults: UserDefaults = .standard) {
+
+    public init(
+        userDefaults: UserDefaults = .standard,
+        legacyDomainDefaults: UserDefaults? = UserDefaults(suiteName: PreferencesStorageConstants.legacyBundleDomain)
+    ) {
         self.userDefaults = userDefaults
+        self.legacyDomainDefaults = legacyDomainDefaults
     }
     
     public func save(_ preferences: UserPreferences) throws {
@@ -51,12 +64,36 @@ public final class UserDefaultsPreferencesStore: PreferencesStore {
             return migratedPreferences
         }
 
+        // Nothing in this domain: the user may be arriving from the pre-rename bundle
+        // identifier, so look there before falling back to defaults.
+        if let inherited = try preferencesFromLegacyDomain() {
+            try save(inherited)
+            return inherited
+        }
+
         let migratedPreferences = mergeLegacyStandaloneValues(into: .default)
         if migratedPreferences != .default {
             try save(migratedPreferences)
         }
 
         return migratedPreferences
+    }
+
+    /// Preferences carried over from the bundle identifier used up to 1.3.0, if any.
+    private func preferencesFromLegacyDomain() throws -> UserPreferences? {
+        guard let legacyDomainDefaults,
+              legacyDomainDefaults != userDefaults else { return nil }
+
+        if let data = legacyDomainDefaults.data(forKey: preferencesKey)
+            ?? legacyDomainDefaults.data(forKey: PreferencesStorageConstants.legacyEncodedPreferencesKey) {
+            let decoder = JSONDecoder()
+            let decoded = try decoder.decode(UserPreferences.self, from: data)
+            return mergeLegacyStandaloneValues(into: decoded, from: legacyDomainDefaults)
+        }
+
+        // No encoded blob, but the very old standalone keys may still be there.
+        let merged = mergeLegacyStandaloneValues(into: .default, from: legacyDomainDefaults)
+        return merged == .default ? nil : merged
     }
     
     public func reset() throws {
@@ -69,18 +106,22 @@ public final class UserDefaultsPreferencesStore: PreferencesStore {
         return mergeLegacyStandaloneValues(into: decoded)
     }
 
-    private func mergeLegacyStandaloneValues(into preferences: UserPreferences) -> UserPreferences {
+    private func mergeLegacyStandaloneValues(
+        into preferences: UserPreferences,
+        from source: UserDefaults? = nil
+    ) -> UserPreferences {
+        let defaults = source ?? userDefaults
         var merged = preferences
 
-        if let showMenuBarIcon = userDefaults.object(forKey: PreferencesStorageConstants.legacyShowMenuBarIconKey) as? Bool {
+        if let showMenuBarIcon = defaults.object(forKey: PreferencesStorageConstants.legacyShowMenuBarIconKey) as? Bool {
             merged.showMenuBarIcon = showMenuBarIcon
         }
 
-        if let launchAtLogin = userDefaults.object(forKey: PreferencesStorageConstants.legacyLaunchAtLoginKey) as? Bool {
+        if let launchAtLogin = defaults.object(forKey: PreferencesStorageConstants.legacyLaunchAtLoginKey) as? Bool {
             merged.launchAtLogin = launchAtLogin
         }
 
-        if let debugMode = userDefaults.object(forKey: PreferencesStorageConstants.legacyDebugModeKey) as? Bool {
+        if let debugMode = defaults.object(forKey: PreferencesStorageConstants.legacyDebugModeKey) as? Bool {
             merged.debugMode = debugMode
         }
 

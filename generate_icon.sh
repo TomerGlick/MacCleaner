@@ -3,7 +3,7 @@
 # Script to generate app icons from SF Symbol
 # This creates a simple icon using the internaldrive.fill symbol
 
-ICON_DIR="/Users/tomer/Develop/MacCleaner/MacStorageCleanupApp/Assets.xcassets/AppIcon.appiconset"
+ICON_DIR="$(cd "$(dirname "$0")" && pwd)/MacStorageCleanupApp/Assets.xcassets/AppIcon.appiconset"
 
 # Create a temporary Swift script to generate icons
 cat > /tmp/generate_icon.swift << 'EOF'
