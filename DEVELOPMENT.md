@@ -10,7 +10,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/MacCleaner.git
+   git clone https://github.com/TomerGlick/MacCleaner.git
    cd MacCleaner
    ```
 
@@ -20,17 +20,14 @@
    ```
 
 3. **Configure Code Signing**
-   
-   Before building, you need to configure code signing:
-   
+
+   The project is set up for its own signing team, so a fork needs its own:
+
    - Select the `MacStorageCleanupApp` target in Xcode
-   - Go to "Signing & Capabilities" tab
-   - Select your Team from the dropdown
-   - Xcode will automatically generate a bundle identifier
-   
-   Alternatively, you can manually set:
-   - **Bundle Identifier**: `com.yourname.MacStorageCleanup` (must be unique)
-   - **Team**: Your Apple Developer Team
+   - Go to "Signing & Capabilities" and pick your Team
+   - Change the **Bundle Identifier** to something you own, e.g.
+     `com.yourname.MacStorageCleanup` — it must be unique, and macOS ties Full Disk
+     Access to it, so changing it means granting that permission again
 
 4. **Build and Run**
    - Select the `MacStorageCleanupApp` scheme
@@ -75,8 +72,20 @@ To test cleanup operations without actually deleting files:
 ## Running Tests
 
 ```bash
-xcodebuild test -scheme MacStorageCleanupApp
+# Core library (the bulk of the suite)
+cd MacStorageCleanup && swift test
+
+# App layer: view models, risk mapping, group selection
+xcodebuild test -project MacStorageCleanupApp.xcodeproj -scheme MacStorageCleanupApp
 ```
+
+## Cutting a Release
+
+`./notarize_release.sh <version>` builds, signs with a Developer ID certificate,
+packages the DMG, submits it to Apple for notarization and staples the ticket, so the
+download opens without a Gatekeeper warning. It preflights the certificate and the
+stored notarization credentials and explains anything missing before it starts building.
+The setup steps are documented at the top of that script.
 
 ## Common Issues
 
