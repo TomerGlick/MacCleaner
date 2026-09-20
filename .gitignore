@@ -125,3 +125,7 @@ Temporary Items
 create_release.sh
 RELEASE_GUIDE.md
 MENU_BAR_FEATURE.md
+generate_icon.sh
+notarize_release.sh
+DEVELOPER_CACHE_SUPPORT.md
+DEVELOPMENT.md
