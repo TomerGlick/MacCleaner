@@ -31,6 +31,20 @@ public struct UserPreferences: Codable, Equatable {
     public var oldFileThresholdDays: Int
     public var largeFileSizeThresholdMB: Int
     public var debugMode: Bool
+    /// Whether cleanup scans include developer tool caches.
+    ///
+    /// Scanning them costs nothing on a machine that has none — the paths simply do not
+    /// exist — so this is a "hide the noise" switch, not a performance one. Chromium app
+    /// caches are never gated by it; those matter to every user.
+    public var scanIncludeDeveloperCaches: Bool
+    /// Whether cleanup scans include AI coding agent caches.
+    public var scanIncludeAIAgentCaches: Bool
+    /// Roots for the opt-in per-project build artifact scan.
+    ///
+    /// Empty by default and deliberately so: this is the only scan that walks the user's
+    /// own source tree rather than a cache directory, so it never runs until the user
+    /// names the folders it may look at.
+    public var projectArtifactScanRoots: [String]
     
     /// Default preferences
     public static let `default` = UserPreferences(
@@ -43,7 +57,10 @@ public struct UserPreferences: Codable, Equatable {
         moveToTrashByDefault: true,
         oldFileThresholdDays: 365,
         largeFileSizeThresholdMB: 100,
-        debugMode: false
+        debugMode: false,
+        scanIncludeDeveloperCaches: true,
+        scanIncludeAIAgentCaches: true,
+        projectArtifactScanRoots: []
     )
     
     /// Safe categories that can be included in scheduled cleanup
@@ -69,7 +86,10 @@ public struct UserPreferences: Codable, Equatable {
         moveToTrashByDefault: Bool,
         oldFileThresholdDays: Int,
         largeFileSizeThresholdMB: Int,
-        debugMode: Bool = false
+        debugMode: Bool = false,
+        scanIncludeDeveloperCaches: Bool = true,
+        scanIncludeAIAgentCaches: Bool = true,
+        projectArtifactScanRoots: [String] = []
     ) {
         self.showMenuBarIcon = showMenuBarIcon
         self.launchAtLogin = launchAtLogin
@@ -81,6 +101,9 @@ public struct UserPreferences: Codable, Equatable {
         self.oldFileThresholdDays = oldFileThresholdDays
         self.largeFileSizeThresholdMB = largeFileSizeThresholdMB
         self.debugMode = debugMode
+        self.scanIncludeDeveloperCaches = scanIncludeDeveloperCaches
+        self.scanIncludeAIAgentCaches = scanIncludeAIAgentCaches
+        self.projectArtifactScanRoots = projectArtifactScanRoots
     }
 
     enum CodingKeys: String, CodingKey {
@@ -94,6 +117,9 @@ public struct UserPreferences: Codable, Equatable {
         case oldFileThresholdDays
         case largeFileSizeThresholdMB
         case debugMode
+        case scanIncludeDeveloperCaches
+        case scanIncludeAIAgentCaches
+        case projectArtifactScanRoots
     }
 
     public init(from decoder: Decoder) throws {
@@ -110,5 +136,8 @@ public struct UserPreferences: Codable, Equatable {
         oldFileThresholdDays = try container.decodeIfPresent(Int.self, forKey: .oldFileThresholdDays) ?? defaults.oldFileThresholdDays
         largeFileSizeThresholdMB = try container.decodeIfPresent(Int.self, forKey: .largeFileSizeThresholdMB) ?? defaults.largeFileSizeThresholdMB
         debugMode = try container.decodeIfPresent(Bool.self, forKey: .debugMode) ?? defaults.debugMode
+        scanIncludeDeveloperCaches = try container.decodeIfPresent(Bool.self, forKey: .scanIncludeDeveloperCaches) ?? defaults.scanIncludeDeveloperCaches
+        scanIncludeAIAgentCaches = try container.decodeIfPresent(Bool.self, forKey: .scanIncludeAIAgentCaches) ?? defaults.scanIncludeAIAgentCaches
+        projectArtifactScanRoots = try container.decodeIfPresent([String].self, forKey: .projectArtifactScanRoots) ?? defaults.projectArtifactScanRoots
     }
 }

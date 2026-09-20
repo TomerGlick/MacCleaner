@@ -32,7 +32,7 @@ struct StorageBreakdownSummary {
 
 final class DefaultStorageAnalysisService: StorageAnalysisService {
     private let inspectionService: any StorageInspectionService
-    private let detailItemLimit = 20
+    private let folderItemLimit = 100
     private let minimumVisibleCategorySize: Int64 = 1_000_000_000
 
     init(inspectionService: any StorageInspectionService = DefaultStorageInspectionService()) {
@@ -84,22 +84,22 @@ final class DefaultStorageAnalysisService: StorageAnalysisService {
         let systemSize = max(0, usedSpace - accountedSize)
 
         var categories: [StorageCategoryData] = []
-        appendCategory(named: "Applications", size: totalApplicationsSize, totalCapacity: totalCapacity, color: .blue, to: &categories)
-        appendCategory(named: "Documents", size: documents, totalCapacity: totalCapacity, color: .green, to: &categories)
-        appendCategory(named: "Desktop", size: desktop, totalCapacity: totalCapacity, color: .cyan, to: &categories)
-        appendCategory(named: "Pictures", size: pictures, totalCapacity: totalCapacity, color: .pink, to: &categories)
-        appendCategory(named: "Movies", size: movies, totalCapacity: totalCapacity, color: .red, to: &categories)
-        appendCategory(named: "Music", size: music, totalCapacity: totalCapacity, color: .indigo, to: &categories)
-        appendCategory(named: "Downloads", size: downloads, totalCapacity: totalCapacity, color: .purple, isDeletable: true, to: &categories)
-        appendCategory(named: "Caches", size: caches, totalCapacity: totalCapacity, color: .orange, isDeletable: true, to: &categories)
-        appendCategory(named: "Logs", size: logs, totalCapacity: totalCapacity, color: .yellow, isDeletable: true, to: &categories)
+        appendCategory(named: "Applications", size: totalApplicationsSize, totalCapacity: totalCapacity, color: .blue, path: "/Applications", to: &categories)
+        appendCategory(named: "Documents", size: documents, totalCapacity: totalCapacity, color: .green, path: homeDirectory + "/Documents", to: &categories)
+        appendCategory(named: "Desktop", size: desktop, totalCapacity: totalCapacity, color: .cyan, path: homeDirectory + "/Desktop", to: &categories)
+        appendCategory(named: "Pictures", size: pictures, totalCapacity: totalCapacity, color: .pink, path: homeDirectory + "/Pictures", to: &categories)
+        appendCategory(named: "Movies", size: movies, totalCapacity: totalCapacity, color: .red, path: homeDirectory + "/Movies", to: &categories)
+        appendCategory(named: "Music", size: music, totalCapacity: totalCapacity, color: .indigo, path: homeDirectory + "/Music", to: &categories)
+        appendCategory(named: "Downloads", size: downloads, totalCapacity: totalCapacity, color: .purple, isDeletable: true, path: homeDirectory + "/Downloads", to: &categories)
+        appendCategory(named: "Caches", size: caches, totalCapacity: totalCapacity, color: .orange, isDeletable: true, path: homeDirectory + "/Library/Caches", to: &categories)
+        appendCategory(named: "Logs", size: logs, totalCapacity: totalCapacity, color: .yellow, isDeletable: true, path: homeDirectory + "/Library/Logs", to: &categories)
 
         if otherLibrarySize > minimumVisibleCategorySize {
-            appendCategory(named: "App Data", size: otherLibrarySize, totalCapacity: totalCapacity, color: .teal, to: &categories)
+            appendCategory(named: "App Data", size: otherLibrarySize, totalCapacity: totalCapacity, color: .teal, path: homeDirectory + "/Library", to: &categories)
         }
 
         if trash > minimumVisibleCategorySize {
-            appendCategory(named: "Trash", size: trash, totalCapacity: totalCapacity, color: .brown, isDeletable: true, to: &categories)
+            appendCategory(named: "Trash", size: trash, totalCapacity: totalCapacity, color: .brown, isDeletable: true, path: homeDirectory + "/.Trash", to: &categories)
         }
 
         appendCategory(named: "System", size: systemSize, totalCapacity: totalCapacity, color: .gray, to: &categories)
@@ -126,79 +126,60 @@ final class DefaultStorageAnalysisService: StorageAnalysisService {
 
     func details(for category: StorageCategoryData, totalCapacity: Int64, homeDirectory: String) async throws -> StorageCategoryData {
         switch category.name {
-        case "Applications":
-            return try await loadApplicationsDetails(category: category, homeDirectory: homeDirectory)
-        case "Documents":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Documents")
-        case "Desktop":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Desktop")
-        case "Pictures":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Pictures")
-        case "Movies":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Movies")
-        case "Music":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Music")
-        case "Downloads":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Downloads")
-        case "Caches":
-            return try await loadCachesDetails(category: category, totalCapacity: totalCapacity, homeDirectory: homeDirectory)
-        case "Logs":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/Library/Logs")
-        case "App Data":
-            return try await loadAppDataDetails(category: category, homeDirectory: homeDirectory)
-        case "Trash":
-            return try await loadTopItemsDetails(category: category, path: homeDirectory + "/.Trash")
-        case "System":
+        case "Applications" where category.path == "/Applications":
+            return try await loadApplicationsDetails(category: category, totalCapacity: totalCapacity, homeDirectory: homeDirectory)
+        case "App Data" where category.path == homeDirectory + "/Library":
+            return try await loadAppDataDetails(category: category, totalCapacity: totalCapacity, homeDirectory: homeDirectory)
+        case "System" where category.path == nil:
             return try await loadSystemDetails(category: category, totalCapacity: totalCapacity, homeDirectory: homeDirectory)
         default:
-            return category
+            guard let path = category.path else { return category }
+            return try await loadFolderDetails(category: category, totalCapacity: totalCapacity, path: path)
         }
     }
 
-    private func loadApplicationsDetails(category: StorageCategoryData, homeDirectory: String) async throws -> StorageCategoryData {
+    /// Generic folder drill-down: sub-folders become drillable subcategories, files stay as items.
+    private func loadFolderDetails(category: StorageCategoryData, totalCapacity: Int64, path: String) async throws -> StorageCategoryData {
         var updatedCategory = category
-        var items = try await inspectionService.topItems(inDirectory: "/Applications", limit: detailItemLimit)
-        items += try await inspectionService.topItems(inDirectory: homeDirectory + "/Applications", limit: detailItemLimit)
-        items.sort { $0.size > $1.size }
-        updatedCategory.items = Array(items.prefix(detailItemLimit))
+        let entries = try await inspectionService.topItems(inDirectory: path, limit: folderItemLimit)
+
+        updatedCategory.subcategories = entries
+            .filter { $0.type == .directory }
+            .map {
+                StorageCategoryData(
+                    item: $0,
+                    totalCapacity: totalCapacity,
+                    color: category.color,
+                    isDeletable: category.isDeletable
+                )
+            }
+
+        updatedCategory.items = entries.filter { $0.type != .directory }
         return updatedCategory
     }
 
-    private func loadTopItemsDetails(category: StorageCategoryData, path: String) async throws -> StorageCategoryData {
+    private func loadApplicationsDetails(category: StorageCategoryData, totalCapacity: Int64, homeDirectory: String) async throws -> StorageCategoryData {
         var updatedCategory = category
-        updatedCategory.items = try await inspectionService.topItems(inDirectory: path, limit: detailItemLimit)
+        var entries = try await inspectionService.topItems(inDirectory: "/Applications", limit: folderItemLimit)
+        entries += try await inspectionService.topItems(inDirectory: homeDirectory + "/Applications", limit: folderItemLimit)
+        entries.sort { $0.size > $1.size }
+
+        updatedCategory.subcategories = entries
+            .filter { $0.type == .directory }
+            .map { StorageCategoryData(item: $0, totalCapacity: totalCapacity, color: category.color) }
+        updatedCategory.items = entries.filter { $0.type != .directory }
         return updatedCategory
     }
 
-    private func loadCachesDetails(category: StorageCategoryData, totalCapacity: Int64, homeDirectory: String) async throws -> StorageCategoryData {
+    private func loadAppDataDetails(category: StorageCategoryData, totalCapacity: Int64, homeDirectory: String) async throws -> StorageCategoryData {
         var updatedCategory = category
-        let cacheItems = try await inspectionService.topItems(inDirectory: homeDirectory + "/Library/Caches", limit: detailItemLimit)
+        let entries = try await inspectionService.topItems(inDirectory: homeDirectory + "/Library", limit: folderItemLimit)
+            .filter { $0.name != "Caches" && $0.name != "Logs" }
 
-        updatedCategory.subcategories = Array(
-            cacheItems
-                .filter { $0.type != .file }
-                .prefix(10)
-                .map {
-                    StorageCategoryData(
-                        name: $0.name,
-                        size: $0.size,
-                        totalCapacity: totalCapacity,
-                        color: .orange
-                    )
-                }
-        )
-        updatedCategory.items = cacheItems
-        return updatedCategory
-    }
-
-    private func loadAppDataDetails(category: StorageCategoryData, homeDirectory: String) async throws -> StorageCategoryData {
-        var updatedCategory = category
-        let items = try await inspectionService.topItems(inDirectory: homeDirectory + "/Library", limit: 30)
-        updatedCategory.items = Array(
-            items
-                .filter { !$0.name.contains("Caches") && !$0.name.contains("Logs") }
-                .prefix(detailItemLimit)
-        )
+        updatedCategory.subcategories = entries
+            .filter { $0.type == .directory }
+            .map { StorageCategoryData(item: $0, totalCapacity: totalCapacity, color: category.color) }
+        updatedCategory.items = entries.filter { $0.type != .directory }
         return updatedCategory
     }
 
@@ -211,10 +192,10 @@ final class DefaultStorageAnalysisService: StorageAnalysisService {
         async let userLibrary = inspectionService.directorySize(at: homeDirectory + "/Library")
         async let privateVar = inspectionService.directorySize(at: "/private/var")
 
-        appendCategory(named: "macOS System", size: try await systemOS, totalCapacity: totalCapacity, color: .gray, to: &subcategories)
-        appendCategory(named: "System Library", size: try await systemLibrary, totalCapacity: totalCapacity, color: .gray, to: &subcategories)
-        appendCategory(named: "User Library", size: try await userLibrary, totalCapacity: totalCapacity, color: .orange, to: &subcategories)
-        appendCategory(named: "System Data", size: try await privateVar, totalCapacity: totalCapacity, color: .yellow, to: &subcategories)
+        appendCategory(named: "macOS System", size: try await systemOS, totalCapacity: totalCapacity, color: .gray, path: "/System", to: &subcategories)
+        appendCategory(named: "System Library", size: try await systemLibrary, totalCapacity: totalCapacity, color: .gray, path: "/Library", to: &subcategories)
+        appendCategory(named: "User Library", size: try await userLibrary, totalCapacity: totalCapacity, color: .orange, path: homeDirectory + "/Library", to: &subcategories)
+        appendCategory(named: "System Data", size: try await privateVar, totalCapacity: totalCapacity, color: .yellow, path: "/private/var", to: &subcategories)
 
         updatedCategory.subcategories = subcategories.sorted { $0.size > $1.size }
         return updatedCategory
@@ -226,6 +207,7 @@ final class DefaultStorageAnalysisService: StorageAnalysisService {
         totalCapacity: Int64,
         color: Color,
         isDeletable: Bool = false,
+        path: String? = nil,
         to categories: inout [StorageCategoryData]
     ) {
         guard size > 0 else { return }
@@ -236,7 +218,8 @@ final class DefaultStorageAnalysisService: StorageAnalysisService {
                 size: size,
                 totalCapacity: totalCapacity,
                 color: color,
-                isDeletable: isDeletable
+                isDeletable: isDeletable,
+                path: path
             )
         )
     }

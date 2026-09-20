@@ -258,6 +258,12 @@ public final class DefaultCleanupEngine: CleanupEngine {
                 if file.url.path.contains("AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime") && file.url.path.hasSuffix(".asset") {
                     logger.debug("Using simctl runtime delete for \(file.url.path, privacy: .public)")
                     try deleteSimulatorRuntime(at: file.url)
+                } else if isUVCacheDirectory(file.url) {
+                    logger.debug("Using uv cache clean for \(file.url.path, privacy: .public)")
+                    try clearUVCache(at: file.url, moveToTrash: options.moveToTrash)
+                } else if let reclaim = toolReclaimCommand(for: file.url) {
+                    logger.debug("Using \(reclaim.executable, privacy: .public) for \(file.url.path, privacy: .public)")
+                    try reclaimViaTool(reclaim, at: file.url, moveToTrash: options.moveToTrash)
                 } else if options.moveToTrash {
                     logger.debug("Moving item to Trash: \(file.url.path, privacy: .public)")
                     try moveToTrash(url: file.url)
@@ -631,6 +637,257 @@ public final class DefaultCleanupEngine: CleanupEngine {
             } catch {
                 throw CleanupError.unknown("Failed to execute xcrun simctl and direct deletion: \(error.localizedDescription)")
             }
+        }
+    }
+
+    // MARK: - Tool-owned reclaim
+
+    struct ToolReclaim {
+        let executable: String
+        let arguments: [String]
+        /// Whether removing the directory afterwards is a valid fallback. False for
+        /// anything where `rm -rf` would leave the tool's index inconsistent.
+        let allowsDirectRemovalFallback: Bool
+    }
+
+    /// The command that owns a path, when one exists.
+    ///
+    /// `simctl`, `avdmanager` and `sdkmanager` all keep an index alongside the files they
+    /// manage. Deleting the directory behind their back leaves phantom entries that the
+    /// IDE re-creates or errors on, so the tool's own command is always preferred.
+    func toolReclaimCommand(for url: URL) -> ToolReclaim? {
+        let path = url.standardizedFileURL.path
+        let homeDir = NSHomeDirectory()
+
+        // A simulator device directory is named by its UUID.
+        if path.hasPrefix("\(homeDir)/Library/Developer/CoreSimulator/Devices/"),
+           let uuid = firstPathComponent(of: path, under: "\(homeDir)/Library/Developer/CoreSimulator/Devices"),
+           UUID(uuidString: uuid) != nil {
+            return ToolReclaim(
+                executable: "/usr/bin/xcrun",
+                arguments: ["simctl", "delete", uuid],
+                allowsDirectRemovalFallback: true
+            )
+        }
+
+        // A mounted runtime volume: "iOS_23F77" -> build "23F77".
+        if path.hasPrefix("/Library/Developer/CoreSimulator/Volumes/"),
+           let volume = firstPathComponent(of: path, under: "/Library/Developer/CoreSimulator/Volumes") {
+            let build = volume.split(separator: "_", maxSplits: 1).last.map(String.init) ?? volume
+            return ToolReclaim(
+                executable: "/usr/bin/xcrun",
+                arguments: ["simctl", "runtime", "delete", build],
+                // Never `rm` a mount point; unmounting is simctl's job.
+                allowsDirectRemovalFallback: false
+            )
+        }
+
+        // "<name>.avd" under ~/.android/avd.
+        if path.hasPrefix("\(homeDir)/.android/avd/"),
+           let entry = firstPathComponent(of: path, under: "\(homeDir)/.android/avd"),
+           entry.hasSuffix(".avd"),
+           let avdManager = androidCommandLineTool(named: "avdmanager") {
+            let name = String(entry.dropLast(".avd".count))
+            return ToolReclaim(
+                executable: avdManager,
+                arguments: ["delete", "avd", "-n", name],
+                allowsDirectRemovalFallback: true
+            )
+        }
+
+        if let packageID = androidSDKPackageID(for: path),
+           let sdkManager = androidCommandLineTool(named: "sdkmanager") {
+            return ToolReclaim(
+                executable: sdkManager,
+                arguments: ["--uninstall", packageID],
+                allowsDirectRemovalFallback: true
+            )
+        }
+
+        if path == "\(homeDir)/Library/Caches/Homebrew", let brew = findExecutable(named: "brew") {
+            return ToolReclaim(
+                executable: brew,
+                arguments: ["cleanup", "--prune=all"],
+                allowsDirectRemovalFallback: true
+            )
+        }
+
+        return nil
+    }
+
+    /// Run a tool's own reclaim command, falling back to direct removal when permitted.
+    private func reclaimViaTool(_ reclaim: ToolReclaim, at url: URL, moveToTrash: Bool) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: reclaim.executable)
+        process.arguments = reclaim.arguments
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        do {
+            try process.run()
+        } catch {
+            logger.warning("Failed to launch \(reclaim.executable, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            try fallbackRemoval(reclaim, at: url, moveToTrash: moveToTrash, output: error.localizedDescription)
+            return
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+
+        guard process.terminationStatus != 0 else { return }
+
+        let output = String(data: data, encoding: .utf8) ?? "Unknown error"
+        logger.error("\(reclaim.executable, privacy: .public) failed with status \(process.terminationStatus, privacy: .public): \(output, privacy: .public)")
+        try fallbackRemoval(reclaim, at: url, moveToTrash: moveToTrash, output: output)
+    }
+
+    private func fallbackRemoval(_ reclaim: ToolReclaim, at url: URL, moveToTrash: Bool, output: String) throws {
+        guard reclaim.allowsDirectRemovalFallback else {
+            throw CleanupError.unknown("\(reclaim.executable) failed and this path cannot be removed directly: \(output)")
+        }
+
+        // The command may still have done its job; nothing left to remove is success.
+        guard fileManager.fileExists(atPath: url.path) else { return }
+
+        if moveToTrash {
+            try self.moveToTrash(url: url)
+        } else {
+            try fileManager.removeItem(at: url)
+        }
+    }
+
+    /// `ndk/27.0.1` under the SDK root becomes the package id `ndk;27.0.1`.
+    private func androidSDKPackageID(for path: String) -> String? {
+        let multiLevelComponents = ["system-images"]
+        let singleLevelComponents = ["ndk", "build-tools", "platforms", "sources"]
+
+        for root in DeveloperTool.androidSDKRoots() {
+            guard path.hasPrefix(root + "/") else { continue }
+            let relative = String(path.dropFirst(root.count + 1))
+            let parts = relative.split(separator: "/").map(String.init)
+
+            guard let component = parts.first else { continue }
+
+            if singleLevelComponents.contains(component), parts.count == 2 {
+                return "\(component);\(parts[1])"
+            }
+            if multiLevelComponents.contains(component), parts.count == 4 {
+                return parts.joined(separator: ";")
+            }
+        }
+
+        return nil
+    }
+
+    private func androidCommandLineTool(named name: String) -> String? {
+        for root in DeveloperTool.androidSDKRoots() {
+            let cmdlineRoot = "\(root)/cmdline-tools"
+            var candidates = ["\(cmdlineRoot)/latest/bin/\(name)", "\(root)/tools/bin/\(name)"]
+
+            if let versions = try? fileManager.contentsOfDirectory(atPath: cmdlineRoot) {
+                candidates += versions.map { "\(cmdlineRoot)/\($0)/bin/\(name)" }
+            }
+
+            if let found = candidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    /// GUI apps do not inherit the user's shell PATH, so probe the usual locations.
+    private func findExecutable(named name: String) -> String? {
+        var candidates = [
+            "/opt/homebrew/bin/\(name)",
+            "/usr/local/bin/\(name)",
+            "\(NSHomeDirectory())/.local/bin/\(name)"
+        ]
+        if let path = ProcessInfo.processInfo.environment["PATH"] {
+            candidates += path.split(separator: ":").map { "\($0)/\(name)" }
+        }
+        return candidates.first { fileManager.isExecutableFile(atPath: $0) }
+    }
+
+    /// The single path component directly below `parent`, when `path` is under it.
+    private func firstPathComponent(of path: String, under parent: String) -> String? {
+        guard path.hasPrefix(parent + "/") else { return nil }
+        return String(path.dropFirst(parent.count + 1)).split(separator: "/").first.map(String.init)
+    }
+
+    /// Check whether a URL is the uv (Python package manager) global cache directory
+    private func isUVCacheDirectory(_ url: URL) -> Bool {
+        let path = url.standardizedFileURL.path
+        return DeveloperTool.uv.cachePaths(homeDir: NSHomeDirectory()).contains { candidate in
+            URL(fileURLWithPath: candidate).standardizedFileURL.path == path
+        }
+    }
+
+    /// Locate the `uv` executable. GUI apps do not inherit the user's shell PATH,
+    /// so the common install locations are probed directly.
+    private func findUVExecutable() -> URL? {
+        let homeDir = NSHomeDirectory()
+        var candidates = [
+            "\(homeDir)/.local/bin/uv",
+            "/opt/homebrew/bin/uv",
+            "/usr/local/bin/uv",
+            "\(homeDir)/.cargo/bin/uv"
+        ]
+
+        // Honor an explicit PATH entry if one happens to be available.
+        if let path = ProcessInfo.processInfo.environment["PATH"] {
+            candidates.append(contentsOf: path.split(separator: ":").map { "\($0)/uv" })
+        }
+
+        return candidates
+            .first { fileManager.isExecutableFile(atPath: $0) }
+            .map { URL(fileURLWithPath: $0) }
+    }
+
+    /// Clear the uv cache using `uv cache clean`, falling back to removing the directory
+    /// when the uv executable is not installed or the command fails.
+    private func clearUVCache(at url: URL, moveToTrash: Bool) throws {
+        guard let uvExecutable = findUVExecutable() else {
+            logger.debug("uv executable not found, removing cache directory directly: \(url.path, privacy: .public)")
+            try removeUVCacheDirectly(at: url, moveToTrash: moveToTrash)
+            return
+        }
+
+        let process = Process()
+        process.executableURL = uvExecutable
+        process.arguments = ["cache", "clean"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            logger.warning("Failed to execute uv cache clean: \(error.localizedDescription, privacy: .public)")
+            try removeUVCacheDirectly(at: url, moveToTrash: moveToTrash)
+            return
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8) ?? ""
+
+        if process.terminationStatus != 0 {
+            logger.error("uv cache clean failed with status \(process.terminationStatus, privacy: .public): \(output, privacy: .public)")
+            try removeUVCacheDirectly(at: url, moveToTrash: moveToTrash)
+            return
+        }
+
+        logger.debug("Successfully cleared uv cache via uv cache clean")
+    }
+
+    private func removeUVCacheDirectly(at url: URL, moveToTrash: Bool) throws {
+        if moveToTrash {
+            try self.moveToTrash(url: url)
+        } else {
+            try fileManager.removeItem(at: url)
         }
     }
 

@@ -2,13 +2,51 @@ import Foundation
 import os.log
 
 /// Protocol for managing cache file identification and operations
-public protocol CacheManager {
+public protocol CacheManager: AnyObject {
+    /// Roots for the opt-in per-project build artifact scan. Empty disables it.
+    ///
+    /// This is the only scan that walks the user's own source tree, so it never runs
+    /// against a default location — the user names the roots.
+    var projectScanRoots: [URL] { get set }
+
     func findSystemCaches() async -> [FileMetadata]
     func findApplicationCaches() async -> [FileMetadata]
     func findBrowserCaches() async -> [BrowserCache]
     func findDeveloperCaches() async -> [DeveloperCache]
+
+    /// Chromium/Electron caches under `~/Library/Application Support`, for every app.
+    ///
+    /// Separate from `findDeveloperCaches()` on purpose: these rows are Chrome, Slack and
+    /// Spotify as much as they are Claude or VS Code, so they must not disappear when a
+    /// user turns developer cache scanning off.
+    func findApplicationDataCaches() async -> [DeveloperCache]
+
     func findAIAgentCaches() async -> [AIAgentCache]
     func clearCaches(caches: [FileMetadata]) async throws -> CleanupResult
+}
+
+/// Whether reclaiming a cache needs administrator rights.
+public enum CacheScope: String, Equatable, Hashable, Sendable {
+    case user
+    case system
+}
+
+/// How risky it is to delete a cache entry.
+public enum CacheSafety: String, Equatable, Hashable, Sendable {
+    /// Scratch data. Nothing is lost and nothing is re-downloaded.
+    case alwaysSafe
+    /// The tool rebuilds or re-downloads this on next use. Costs time, not work.
+    case regenerates
+    /// Could break a build or lose a device definition. Never selected by default.
+    case needsConfirmation
+}
+
+/// How to reclaim a cache. Tool-owned caches must go through the tool's own command so
+/// its internal index stays consistent; `rm -rf` leaves phantom entries that the IDE
+/// then re-creates or errors on.
+public enum ReclaimMethod: Equatable, Hashable, Sendable {
+    case removeItem
+    case command(String, [String])
 }
 
 /// Represents a developer tool cache location
@@ -17,12 +55,75 @@ public struct DeveloperCache: Equatable, Hashable {
     public let cacheLocation: URL
     public let size: Int64
     public let description: String
-    
-    public init(tool: DeveloperTool, cacheLocation: URL, size: Int64, description: String) {
+
+    /// Human-readable label — "iPhone 17 Pro · iOS 26.5", never a bare UUID.
+    public let displayName: String
+    /// Version this entry belongs to, when the tool keeps one directory per version.
+    public let version: String?
+    /// False marks a superseded version, which is what makes multi-version accumulation
+    /// visible instead of hiding it behind one total per tool.
+    public let isNewestVersion: Bool
+    /// Project files that pin this version. Non-empty means "do not offer for deletion".
+    public let referencedBy: [URL]
+    public let scope: CacheScope
+    public let reclaimMethod: ReclaimMethod
+    public let safety: CacheSafety
+    public let measurement: SizeMeasurement
+    /// The size is understated because the path is TCC-protected.
+    public let needsFullDiskAccess: Bool
+    /// UI grouping label. Falls back to the tool's display name when nil — set it when a
+    /// tool produces rows that belong under a finer heading ("Claude", "Android SDK").
+    public let groupHint: String?
+    public init(
+        tool: DeveloperTool,
+        cacheLocation: URL,
+        size: Int64,
+        description: String,
+        displayName: String? = nil,
+        version: String? = nil,
+        isNewestVersion: Bool = true,
+        referencedBy: [URL] = [],
+        scope: CacheScope = .user,
+        reclaimMethod: ReclaimMethod = .removeItem,
+        safety: CacheSafety = .regenerates,
+        measurement: SizeMeasurement = .enumerated,
+        needsFullDiskAccess: Bool = false,
+        groupHint: String? = nil
+    ) {
         self.tool = tool
         self.cacheLocation = cacheLocation
         self.size = size
         self.description = description
+        self.displayName = displayName ?? description
+        self.version = version
+        self.isNewestVersion = isNewestVersion
+        self.referencedBy = referencedBy
+        self.scope = scope
+        self.reclaimMethod = reclaimMethod
+        self.safety = safety
+        self.measurement = measurement
+        self.needsFullDiskAccess = needsFullDiskAccess
+        self.groupHint = groupHint
+    }
+
+    /// Heading this row belongs under in the candidates list.
+    public var groupLabel: String {
+        groupHint ?? tool.displayName
+    }
+
+    /// Whether this entry should start out checked in the UI.
+    ///
+    /// Always-safe scratch data, plus superseded versions that no project pins.
+    /// Everything else is left for the user to opt into deliberately.
+    public var isDefaultSelected: Bool {
+        switch safety {
+        case .alwaysSafe:
+            return true
+        case .regenerates:
+            return !isNewestVersion && referencedBy.isEmpty
+        case .needsConfirmation:
+            return false
+        }
     }
 }
 
@@ -45,8 +146,28 @@ public enum DeveloperTool: String, CaseIterable {
     case npm
     case yarn
     case pip
+    case uv
     case homebrew
-    
+    // Multi-version toolchains and per-item rows produced by `DeveloperCacheScanner`.
+    case simulatorRuntimeVolumes
+    case androidNDK
+    case androidSystemImages
+    case androidBuildTools
+    case androidPlatforms
+    case androidSources
+    case androidExtras
+    case androidAVD
+    case gradleWrapperDists
+    case gradleScratch
+    case gradleToolchains
+    case kotlinNative
+    case xcodeCodingAssistant
+    case xcodeProducts
+    case electronAppData
+    case commandLineTools
+    case localSnapshots
+    case projectBuildArtifacts
+
     public var displayName: String {
         switch self {
         case .xcode: return "Xcode Caches"
@@ -66,7 +187,42 @@ public enum DeveloperTool: String, CaseIterable {
         case .npm: return "npm"
         case .yarn: return "Yarn"
         case .pip: return "pip"
+        case .uv: return "uv (Python)"
         case .homebrew: return "Homebrew"
+        case .simulatorRuntimeVolumes: return "Simulator Runtimes"
+        case .androidNDK: return "Android NDK"
+        case .androidSystemImages: return "Android System Images"
+        case .androidBuildTools: return "Android Build Tools"
+        case .androidPlatforms: return "Android Platforms"
+        case .androidSources: return "Android Sources"
+        case .androidExtras: return "Android SDK Extras"
+        case .androidAVD: return "Android Emulators (AVD)"
+        case .gradleWrapperDists: return "Gradle Distributions"
+        case .gradleScratch: return "Gradle Scratch Data"
+        case .gradleToolchains: return "Gradle Toolchain JDKs"
+        case .kotlinNative: return "Kotlin/Native"
+        case .xcodeCodingAssistant: return "Xcode Coding Assistant"
+        case .xcodeProducts: return "Xcode Products"
+        case .electronAppData: return "App Caches (Electron)"
+        case .commandLineTools: return "Command Line Tools"
+        case .localSnapshots: return "APFS Local Snapshots"
+        case .projectBuildArtifacts: return "Project Build Artifacts"
+        }
+    }
+
+    /// Tools whose entries are produced by `DeveloperCacheScanner` rather than by the
+    /// generic path loop, because they need per-version rows, `statfs` sizing, or a
+    /// tool-specific listing command.
+    public var isScannerOwned: Bool {
+        switch self {
+        case .simulatorRuntimeVolumes, .androidNDK, .androidSystemImages, .androidBuildTools,
+             .androidPlatforms, .androidSources, .androidExtras, .androidAVD,
+             .gradle, .gradleWrapperDists, .gradleScratch, .gradleToolchains,
+             .kotlinNative, .xcodeDeviceSupport, .xcodeCodingAssistant, .xcodeProducts,
+             .electronAppData, .commandLineTools, .localSnapshots, .projectBuildArtifacts:
+            return true
+        default:
+            return false
         }
     }
     
@@ -79,7 +235,8 @@ public enum DeveloperTool: String, CaseIterable {
             return [
                 "\(homeDir)/Library/Developer/CoreSimulator/Caches",
                 "\(homeDir)/Library/Developer/CoreSimulator/Devices",
-                "/Library/Developer/CoreSimulator/Volumes",
+                // /Library/Developer/CoreSimulator/Volumes is deliberately absent: those are
+                // mounted APFS volumes that `DeveloperCacheScanner` sizes via statfs.
                 "/Library/Developer/CoreSimulator/Profiles/Runtimes",
                 "/Library/Developer/CoreSimulator/Cryptex/Images/bundle",
                 "/System/Library/AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime"
@@ -123,9 +280,92 @@ public enum DeveloperTool: String, CaseIterable {
             return ["\(homeDir)/Library/Caches/Yarn"]
         case .pip:
             return ["\(homeDir)/Library/Caches/pip"]
+        case .uv:
+            // uv defaults to $XDG_CACHE_HOME/uv (i.e. ~/.cache/uv), overridable via UV_CACHE_DIR.
+            let env = ProcessInfo.processInfo.environment
+            if let explicit = env["UV_CACHE_DIR"], !explicit.isEmpty {
+                return [(explicit as NSString).expandingTildeInPath]
+            }
+            var paths = ["\(homeDir)/.cache/uv"]
+            if let xdg = env["XDG_CACHE_HOME"], !xdg.isEmpty {
+                let xdgPath = ((xdg as NSString).expandingTildeInPath as NSString)
+                    .appendingPathComponent("uv")
+                if !paths.contains(xdgPath) {
+                    paths.insert(xdgPath, at: 0)
+                }
+            }
+            return paths
         case .homebrew:
             return ["\(homeDir)/Library/Caches/Homebrew"]
+
+        // Scanner-owned roots. Listed so the paths live in one place, but the generic
+        // loop in `findDeveloperCaches()` skips them (see `isScannerOwned`).
+        case .simulatorRuntimeVolumes:
+            return ["/Library/Developer/CoreSimulator/Volumes"]
+        case .androidNDK:
+            return DeveloperTool.androidSDKRoots(homeDir: homeDir).map { "\($0)/ndk" }
+        case .androidSystemImages:
+            return DeveloperTool.androidSDKRoots(homeDir: homeDir).map { "\($0)/system-images" }
+        case .androidBuildTools:
+            return DeveloperTool.androidSDKRoots(homeDir: homeDir).map { "\($0)/build-tools" }
+        case .androidPlatforms:
+            return DeveloperTool.androidSDKRoots(homeDir: homeDir).map { "\($0)/platforms" }
+        case .androidSources:
+            return DeveloperTool.androidSDKRoots(homeDir: homeDir).map { "\($0)/sources" }
+        case .androidExtras:
+            return DeveloperTool.androidSDKRoots(homeDir: homeDir).map { "\($0)/extras" }
+        case .androidAVD:
+            return ["\(homeDir)/.android/avd"]
+        case .gradleWrapperDists:
+            return ["\(homeDir)/.gradle/wrapper/dists"]
+        case .gradleScratch:
+            return [
+                "\(homeDir)/.gradle/.tmp",
+                "\(homeDir)/.gradle/daemon",
+                "\(homeDir)/.gradle/native",
+                "\(homeDir)/.gradle/nodejs",
+                "\(homeDir)/.gradle/yarn"
+            ]
+        case .gradleToolchains:
+            return ["\(homeDir)/.gradle/jdks"]
+        case .kotlinNative:
+            return ["\(homeDir)/.konan"]
+        case .xcodeCodingAssistant:
+            return ["\(homeDir)/Library/Developer/Xcode/CodingAssistant"]
+        case .xcodeProducts:
+            return ["\(homeDir)/Library/Developer/Xcode/Products"]
+        case .electronAppData:
+            return ["\(homeDir)/Library/Application Support"]
+        case .commandLineTools:
+            return ["/Library/Developer/CommandLineTools"]
+        case .localSnapshots:
+            return []
+        case .projectBuildArtifacts:
+            return []
         }
+    }
+
+    /// Resolve the Android SDK location. The path is not fixed — respect the
+    /// environment before falling back to the default install location.
+    public static func androidSDKRoots(homeDir: String = NSHomeDirectory()) -> [String] {
+        let env = ProcessInfo.processInfo.environment
+        var roots: [String] = []
+
+        for key in ["ANDROID_HOME", "ANDROID_SDK_ROOT"] {
+            if let value = env[key], !value.isEmpty {
+                let expanded = (value as NSString).expandingTildeInPath
+                if !roots.contains(expanded) {
+                    roots.append(expanded)
+                }
+            }
+        }
+
+        let defaultRoot = "\(homeDir)/Library/Android/sdk"
+        if !roots.contains(defaultRoot) {
+            roots.append(defaultRoot)
+        }
+
+        return roots.filter { FileManager.default.fileExists(atPath: $0) }
     }
 }
 
@@ -248,9 +488,13 @@ public class DefaultCacheManager: CacheManager {
     private let fileManager = FileManager.default
     private let safeListManager: SafeListManager
     private let logger = Logger(subsystem: "com.macstoragecleanup.core", category: "cache")
-    
-    public init(safeListManager: SafeListManager = DefaultSafeListManager()) {
+    let sizer: DirectorySizer
+    /// Optional roots for the opt-in per-project build artifact scan. Empty disables it.
+    public var projectScanRoots: [URL] = []
+
+    public init(safeListManager: SafeListManager = DefaultSafeListManager(), sizer: DirectorySizer = DirectorySizer()) {
         self.safeListManager = safeListManager
+        self.sizer = sizer
     }
     
     /// Find system caches in ~/Library/Caches
@@ -307,8 +551,8 @@ public class DefaultCacheManager: CacheManager {
     public func findDeveloperCaches() async -> [DeveloperCache] {
         var developerCaches: [DeveloperCache] = []
         let homeDir = NSHomeDirectory()
-        
-        for tool in DeveloperTool.allCases {
+
+        for tool in DeveloperTool.allCases where !tool.isScannerOwned {
             let cachePaths = tool.cachePaths(homeDir: homeDir)
             
             for cachePath in cachePaths {
@@ -414,10 +658,28 @@ public class DefaultCacheManager: CacheManager {
                 }
             }
         }
-        
+
+        // Multi-version toolchains, mounted runtimes and per-item rows. These need
+        // version grouping, statfs sizing or a tool listing command, none of which the
+        // generic path loop above can express.
+        developerCaches.append(contentsOf: await makeScanner().scan())
+
         return developerCaches
     }
-    
+
+    /// Find Chromium/Electron caches for every app under Application Support
+    public func findApplicationDataCaches() async -> [DeveloperCache] {
+        await makeScanner().scanApplicationData()
+    }
+
+    private func makeScanner() -> DeveloperCacheScanner {
+        DeveloperCacheScanner(
+            sizer: sizer,
+            homeDir: NSHomeDirectory(),
+            projectScanRoots: projectScanRoots
+        )
+    }
+
     /// Find AI agent caches
     public func findAIAgentCaches() async -> [AIAgentCache] {
         var agentCaches: [AIAgentCache] = []
@@ -710,31 +972,18 @@ public class DefaultCacheManager: CacheManager {
         }
     }
     
+    /// Measure a directory, reporting allocated size plus how it was obtained.
+    ///
+    /// Hidden entries are included and mount points are answered from `statfs`, so this
+    /// is both more accurate and dramatically faster than the recursive `attributesOfItem`
+    /// walk it replaces.
+    func measure(_ directory: URL) -> DirectorySize {
+        sizer.size(of: directory)
+    }
+
     /// Calculate total size of a directory
     private func calculateDirectorySize(_ directory: URL) async -> Int64 {
-        var totalSize: Int64 = 0
-        
-        guard let enumerator = fileManager.enumerator(
-            at: directory,
-            includingPropertiesForKeys: [.fileSizeKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return totalSize
-        }
-        
-        while let fileURL = enumerator.nextObject() as? URL {
-            do {
-                let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
-                if let size = attributes[.size] as? Int64 {
-                    totalSize += size
-                }
-            } catch {
-                // Skip files we can't read
-                continue
-            }
-        }
-        
-        return totalSize
+        measure(directory).bytes
     }
     
     /// Read simulator version from .asset plist

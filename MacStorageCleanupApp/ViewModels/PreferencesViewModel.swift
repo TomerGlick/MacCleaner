@@ -17,6 +17,10 @@ class PreferencesViewModel: ObservableObject {
     // Cleanup preferences
     @Published var moveToTrashByDefault: Bool
     @Published var debugMode: Bool
+    @Published var scanIncludeDeveloperCaches: Bool
+    @Published var scanIncludeAIAgentCaches: Bool
+    /// Folders the per-project build artifact scan may look at. Empty disables that scan.
+    @Published var projectArtifactScanRoots: [String]
     
     // Threshold preferences
     @Published var oldFileThresholdDays: Int
@@ -41,6 +45,9 @@ class PreferencesViewModel: ObservableObject {
         self.backupLocation = PreferencesViewModel.defaultBackupLocation()
         self.moveToTrashByDefault = loadedPreferences.moveToTrashByDefault
         self.debugMode = loadedPreferences.debugMode
+        self.scanIncludeDeveloperCaches = loadedPreferences.scanIncludeDeveloperCaches
+        self.scanIncludeAIAgentCaches = loadedPreferences.scanIncludeAIAgentCaches
+        self.projectArtifactScanRoots = loadedPreferences.projectArtifactScanRoots
         self.oldFileThresholdDays = loadedPreferences.oldFileThresholdDays
         self.largeFileSizeThresholdMB = loadedPreferences.largeFileSizeThresholdMB
         self.enableScheduledCleanup = loadedPreferences.enableScheduledCleanup
@@ -55,6 +62,9 @@ class PreferencesViewModel: ObservableObject {
         preferences.createBackupsByDefault = createBackupsByDefault
         preferences.moveToTrashByDefault = moveToTrashByDefault
         preferences.debugMode = debugMode
+        preferences.scanIncludeDeveloperCaches = scanIncludeDeveloperCaches
+        preferences.scanIncludeAIAgentCaches = scanIncludeAIAgentCaches
+        preferences.projectArtifactScanRoots = projectArtifactScanRoots
         preferences.oldFileThresholdDays = clampedOldFileThreshold
         preferences.largeFileSizeThresholdMB = largeFileSizeThresholdMB
         preferences.enableScheduledCleanup = enableScheduledCleanup
@@ -89,6 +99,9 @@ class PreferencesViewModel: ObservableObject {
         backupLocation = getBackupLocation()
         moveToTrashByDefault = preferences.moveToTrashByDefault
         debugMode = preferences.debugMode
+        scanIncludeDeveloperCaches = preferences.scanIncludeDeveloperCaches
+        scanIncludeAIAgentCaches = preferences.scanIncludeAIAgentCaches
+        projectArtifactScanRoots = preferences.projectArtifactScanRoots
         oldFileThresholdDays = preferences.oldFileThresholdDays
         largeFileSizeThresholdMB = preferences.largeFileSizeThresholdMB
         enableScheduledCleanup = preferences.enableScheduledCleanup
@@ -158,6 +171,26 @@ class PreferencesViewModel: ObservableObject {
         }
     }
     
+    /// Add a folder the per-project build artifact scan may look at.
+    func addProjectScanRoot() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.message = "Select the folder that holds your projects"
+
+        guard panel.runModal() == .OK else { return }
+
+        for url in panel.urls where !projectArtifactScanRoots.contains(url.path) {
+            projectArtifactScanRoots.append(url.path)
+        }
+    }
+
+    func removeProjectScanRoot(_ path: String) {
+        projectArtifactScanRoots.removeAll { $0 == path }
+    }
+
     func revealBackupLocation() {
         let url = URL(fileURLWithPath: backupLocation)
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)

@@ -52,6 +52,12 @@
 		F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFDF2F50A348005C6ACB /* DiskSpaceBar.swift */; };
 		F1FFAFE22F50ACB0005C6ACB /* PermissionRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */; };
 		FWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = PKG001 /* MacStorageCleanupCore */; };
+		TESTBF001 /* CleanupProgressViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC001 /* CleanupProgressViewModelTests.swift */; };
+		TESTBF002 /* CleanupResultsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC002 /* CleanupResultsViewModelTests.swift */; };
+		TESTBF003 /* StorageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC003 /* StorageViewModelTests.swift */; };
+		TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC004 /* CleanupCandidateRiskTests.swift */; };
+		TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */; };
+		TESTFWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = TESTPKG001 /* MacStorageCleanupCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -101,6 +107,12 @@
 		SRC032 /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
 		SRC033 /* StorageAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAnalysisService.swift; sourceTree = "<group>"; };
 		SRC034 /* StorageInspectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageInspectionService.swift; sourceTree = "<group>"; };
+		TESTSRC001 /* CleanupProgressViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupProgressViewModelTests.swift; sourceTree = "<group>"; };
+		TESTSRC002 /* CleanupResultsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupResultsViewModelTests.swift; sourceTree = "<group>"; };
+		TESTSRC003 /* StorageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageViewModelTests.swift; sourceTree = "<group>"; };
+		TESTSRC004 /* CleanupCandidateRiskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidateRiskTests.swift; sourceTree = "<group>"; };
+		TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidatesGroupSelectionTests.swift; sourceTree = "<group>"; };
+		TESTPRODUCT001 /* MacStorageCleanupAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacStorageCleanupAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +121,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				FWK001 /* MacStorageCleanupCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		TESTFRAMEWORKS001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				TESTFWK001 /* MacStorageCleanupCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,14 +145,28 @@
 				GROUP005 /* Models */,
 				GROUP006 /* Services */,
 				INFO001 /* Info.plist */,
+				TESTGROUP001 /* Tests */,
 			);
 			path = MacStorageCleanupApp;
+			sourceTree = "<group>";
+		};
+		TESTGROUP001 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				TESTSRC001 /* CleanupProgressViewModelTests.swift */,
+				TESTSRC002 /* CleanupResultsViewModelTests.swift */,
+				TESTSRC003 /* StorageViewModelTests.swift */,
+				TESTSRC004 /* CleanupCandidateRiskTests.swift */,
+				TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		GROUP002 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				PRODUCT001 /* MacStorageCleanupApp.app */,
+				TESTPRODUCT001 /* MacStorageCleanupAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -238,7 +272,45 @@
 			productReference = PRODUCT001 /* MacStorageCleanupApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		TESTTARGET001 /* MacStorageCleanupAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = TESTCONFIG001 /* Build configuration list for PBXNativeTarget "MacStorageCleanupAppTests" */;
+			buildPhases = (
+				TESTPHASE001 /* Sources */,
+				TESTFRAMEWORKS001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				TESTDEP001 /* PBXTargetDependency */,
+			);
+			name = MacStorageCleanupAppTests;
+			packageProductDependencies = (
+				TESTPKG001 /* MacStorageCleanupCore */,
+			);
+			productName = MacStorageCleanupAppTests;
+			productReference = TESTPRODUCT001 /* MacStorageCleanupAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		TESTPROXY001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = PROJECT001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = TARGET001;
+			remoteInfo = MacStorageCleanupApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		TESTDEP001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = TARGET001 /* MacStorageCleanupApp */;
+			targetProxy = TESTPROXY001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		PROJECT001 /* Project object */ = {
@@ -265,6 +337,7 @@
 			projectRoot = "";
 			targets = (
 				TARGET001 /* MacStorageCleanupApp */,
+				TESTTARGET001 /* MacStorageCleanupAppTests */,
 			);
 		};
 /* End PBXProject section */
@@ -328,6 +401,18 @@
 				APP032 /* PreferencesService.swift in Sources */,
 				APP033 /* StorageAnalysisService.swift in Sources */,
 				APP034 /* StorageInspectionService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		TESTPHASE001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				TESTBF001 /* CleanupProgressViewModelTests.swift in Sources */,
+				TESTBF002 /* CleanupResultsViewModelTests.swift in Sources */,
+				TESTBF003 /* StorageViewModelTests.swift in Sources */,
+				TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */,
+				TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,7 +520,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -537,12 +622,56 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		TESTDEBUG001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = DTF8Z84J97;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MacStorageCleanupAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacStorageCleanupApp.app/Contents/MacOS/MacStorageCleanupApp";
+			};
+			name = Debug;
+		};
+		TESTRELEASE001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = DTF8Z84J97;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.MacStorageCleanupAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacStorageCleanupApp.app/Contents/MacOS/MacStorageCleanupApp";
 			};
 			name = Release;
 		};
@@ -567,6 +696,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		TESTCONFIG001 /* Build configuration list for PBXNativeTarget "MacStorageCleanupAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				TESTDEBUG001 /* Debug */,
+				TESTRELEASE001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -578,6 +716,11 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		PKG001 /* MacStorageCleanupCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */;
+			productName = MacStorageCleanupCore;
+		};
+		TESTPKG001 /* MacStorageCleanupCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */;
 			productName = MacStorageCleanupCore;

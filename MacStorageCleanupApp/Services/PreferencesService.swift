@@ -90,6 +90,21 @@ class PreferencesService {
         get { loadPreferences().largeFileSizeThresholdMB }
         set { updatePreference(\.largeFileSizeThresholdMB, value: newValue) }
     }
+
+    var scanIncludeDeveloperCaches: Bool {
+        get { loadPreferences().scanIncludeDeveloperCaches }
+        set { updatePreference(\.scanIncludeDeveloperCaches, value: newValue) }
+    }
+
+    var scanIncludeAIAgentCaches: Bool {
+        get { loadPreferences().scanIncludeAIAgentCaches }
+        set { updatePreference(\.scanIncludeAIAgentCaches, value: newValue) }
+    }
+
+    var projectArtifactScanRoots: [String] {
+        get { loadPreferences().projectArtifactScanRoots }
+        set { updatePreference(\.projectArtifactScanRoots, value: newValue) }
+    }
     
     // MARK: - Validation
     

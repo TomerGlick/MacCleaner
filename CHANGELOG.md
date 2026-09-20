@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-20
+
+### Added
+- Per-version rows for multi-version toolchains, so accumulation is visible instead of being
+  hidden behind one total per tool
+- Android SDK scanning: NDK, system images, build tools, platforms, sources and extras,
+  removed with `sdkmanager --uninstall`
+- Android emulator (AVD) scanning, with display names from `<name>.ini`, removed with
+  `avdmanager delete avd`
+- Gradle breakdown: `caches/<version>` per version, wrapper distributions, dependency jars,
+  build cache, toolchain JDKs, and always-safe scratch directories
+- Kotlin/Native (`~/.konan`) scanning, one row per prebuilt compiler version
+- Simulator runtime volumes sized with `statfs`, removed with `simctl runtime delete`
+- Device Support grouped by device model, keeping the newest build per model
+- Generic Electron/Chromium cache sweep across every app under Application Support and each
+  browser profile, always scanned regardless of the developer cache toggle
+- Android Studio `DerivedData` reported separately from the opaque Google cache blob
+- Xcode Coding Assistant, build Products, duplicate `Xcode*.app` installs and Command Line
+  Tools detection
+- APFS local snapshot reporting via `tmutil`
+- Opt-in per-project build artifact scan over folders chosen in Preferences, guarded by a
+  required project marker and never following symlinks out of the chosen root
+- `ProjectReferenceIndex`: projects are searched for `ndkVersion`, `buildToolsVersion`,
+  `ndk.dir`, `gradle-wrapper.properties` and CI variables, so a pinned version is never
+  offered for deletion and the files pinning it are shown
+- Traffic-light risk indicator on every row and group heading, with a legend above the list
+- Group-level checkbox with a mixed state, per-group selected totals
+- Tool-owned reclaim commands (`simctl delete`, `simctl runtime delete`,
+  `avdmanager delete avd`, `sdkmanager --uninstall`, `brew cleanup`) in preference to `rm`
+- `MacStorageCleanupAppTests` target, so the app-layer tests actually run
+
+### Changed
+- Sizing reports allocated size rather than logical size, so APFS clones and sparse
+  simulator images no longer overstate reclaimable space
+- Hidden entries are included when sizing; previously everything inside `~/.gradle` and every
+  dotfile in a cache was invisible
+- Mount points are measured with `statfs` instead of a recursive walk that took minutes
+- Unreadable paths report "permission needed" instead of silently reporting 0 bytes
+- Measurements have a time budget and report a partial result rather than stalling a scan
+- Developer and AI agent cache toggles are persisted and honoured by the cleanup page, not
+  just the scan page
+- `ProjectReferenceIndex` is skipped entirely when no versioned toolchain is installed
+
+### Fixed
+- Mounted simulator runtime volumes were counted twice — once as a volume and once as the
+  downloaded asset backing it — overstating reclaimable space
+- `~/Library/Application Support/Code/CachedData` was claimed by both the developer and app
+  cache sweeps and reported twice
+- `xcuserdata` was marked always-safe and pre-selected, but holds breakpoints and
+  user-scoped schemes carrying env vars, launch arguments and test config, which do not
+  regenerate and are gitignored
+- Android SDK `sources` was marked always-safe despite requiring an `sdkmanager` download
+- `CleanupProgressViewModelTests.testProgressUpdates` asserted against files that were never
+  created on disk
+
 ## [1.2.0] - 2026-09-16
 
 ### Added

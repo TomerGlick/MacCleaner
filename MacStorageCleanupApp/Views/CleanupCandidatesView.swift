@@ -1,5 +1,22 @@
 import SwiftUI
 
+/// One traffic-light dot. Size is the only thing that varies between a row and a heading.
+struct RiskDot: View {
+    let level: CleanupCandidateData.RiskLevel
+    var diameter: CGFloat = 8
+
+    var body: some View {
+        Circle()
+            .fill(level.color)
+            .frame(width: diameter, height: diameter)
+            // A ring keeps yellow and green apart for a red-green colour-blind viewer,
+            // and keeps any dot visible against both light and dark backgrounds.
+            .overlay(Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5))
+            .help("\(level.label) — \(level.explanation)")
+            .accessibilityLabel(level.label)
+    }
+}
+
 struct CleanupCandidatesView: View {
     @StateObject private var viewModel: CleanupCandidatesViewModel
     @ObservedObject var storageViewModel: StorageViewModel
@@ -23,7 +40,9 @@ struct CleanupCandidatesView: View {
             
             // Toolbar with sorting and filtering
             toolbarView
-            
+
+            riskLegendView
+
             Divider()
             
             // File list
@@ -159,6 +178,30 @@ struct CleanupCandidatesView: View {
         .padding(.vertical, 8)
     }
     
+    /// Explains the dots once, at the top, so a row never has to.
+    private var riskLegendView: some View {
+        HStack(spacing: 16) {
+            ForEach(CleanupCandidateData.RiskLevel.allCases, id: \.self) { level in
+                HStack(spacing: 5) {
+                    RiskDot(level: level)
+                    Text(level.label)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .help(level.explanation)
+            }
+
+            Spacer()
+
+            Text("Only green and superseded amber items are ticked for you")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
     private var fileListView: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 1, pinnedViews: [.sectionHeaders]) {
@@ -219,33 +262,71 @@ struct CleanupCandidatesView: View {
     private func groupHeader(label: String, items: [CleanupCandidateData]) -> some View {
         let totalSize = items.reduce(Int64(0)) { $0 + $1.size }
         let isExpanded = expandedGroups.contains(label)
-        return Button(action: { toggleGroupExpansion(label) }) {
-            HStack {
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                
-                Text(label)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                
-                Text("(\(items.count))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                Text(ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file))
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.secondary)
+        let isFullySelected = viewModel.isGroupFullySelected(label)
+        let isPartiallySelected = viewModel.isGroupPartiallySelected(label)
+        let selectedSize = viewModel.selectedSize(inGroup: label)
+
+        return HStack(spacing: 8) {
+            // Select the whole group. Its own button, so ticking a group never
+            // collapses it and expanding never changes the selection.
+            Button(action: { viewModel.toggleGroupSelection(label) }) {
+                Image(systemName: groupCheckboxSymbol(full: isFullySelected, partial: isPartiallySelected))
+                    .font(.title3)
+                    .foregroundColor(isFullySelected || isPartiallySelected ? .blue : .secondary)
+                    .frame(width: 20)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 6)
+            .buttonStyle(.plain)
+            .help(isFullySelected ? "Deselect everything in \(label)" : "Select everything in \(label)")
+
+            RiskDot(level: viewModel.riskLevel(inGroup: label), diameter: 9)
+
+            Button(action: { toggleGroupExpansion(label) }) {
+                HStack {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+
+                    Text(label)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+
+                    Text("(\(items.count))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    // Once something in the group is ticked, show what that adds up to —
+                    // that is the number the user is deciding about.
+                    if selectedSize > 0 {
+                        Text(ByteCountFormatter.string(fromByteCount: selectedSize, countStyle: .file))
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.blue)
+                        Text("of")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text(ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file))
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.vertical, 6)
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    private func groupCheckboxSymbol(full: Bool, partial: Bool) -> String {
+        if full { return "checkmark.square.fill" }
+        if partial { return "minus.square.fill" }
+        return "square"
     }
     
     private func toggleGroupExpansion(_ label: String) {
@@ -391,7 +472,9 @@ struct CleanupCandidateRowView: View {
                     .frame(width: 20)
             }
             .buttonStyle(.plain)
-            
+
+            RiskDot(level: candidate.riskLevel)
+
             // File icon
             Image(systemName: candidate.fileType.iconName)
                 .font(.title3)
@@ -408,16 +491,36 @@ struct CleanupCandidateRowView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
+
+                // Why this row is or is not checked — a superseded version, a pinned
+                // one, or a path we could not read without Full Disk Access.
+                if let note = candidate.safetyNote {
+                    HStack(spacing: 4) {
+                        Image(systemName: safetyNoteIcon)
+                        Text(note)
+                    }
+                    .font(.caption2)
+                    .foregroundColor(safetyNoteColor)
+                    .lineLimit(1)
+                }
             }
-            
+
             Spacer()
-            
+
             // Metadata
             VStack(alignment: .trailing, spacing: 2) {
-                Text(candidate.formattedSize)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    
+                HStack(spacing: 4) {
+                    if candidate.isPartialSize {
+                        Text("≥")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .help("Measurement hit its time budget — the real size is larger")
+                    }
+                    Text(candidate.needsFullDiskAccess ? "—" : candidate.formattedSize)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+
                     Text(candidate.relativeAccessedDate)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -446,6 +549,19 @@ struct CleanupCandidateRowView: View {
             }
     }
     
+    private var safetyNoteIcon: String {
+        if candidate.needsFullDiskAccess { return "lock.fill" }
+        if !candidate.referencedBy.isEmpty { return "pin.fill" }
+        if candidate.requiresAdmin { return "key.fill" }
+        return candidate.isSelected ? "checkmark.seal" : "info.circle"
+    }
+
+    private var safetyNoteColor: Color {
+        if candidate.needsFullDiskAccess { return .orange }
+        if !candidate.referencedBy.isEmpty { return .orange }
+        return .secondary
+    }
+
     private func showInFinder(path: String) {
         NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: "")
     }

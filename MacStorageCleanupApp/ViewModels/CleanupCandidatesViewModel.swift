@@ -132,20 +132,46 @@ class CleanupCandidatesViewModel: ObservableObject {
             
             guard !Task.isCancelled else { return }
             
-            loadingMessage = "Scanning developer caches..."
-            loadingProgress = 0.7
-            let devResults = await coordinator.cacheManager.findDeveloperCaches()
-            
+            loadingMessage = "Scanning app caches..."
+            loadingProgress = 0.6
+            // Chrome, Slack, Spotify and the rest. Never gated by the developer toggle —
+            // for most users this is where their reclaimable space actually is.
+            let allAppDataResults = await coordinator.cacheManager.findApplicationDataCaches()
+
             guard !Task.isCancelled else { return }
-            
-            loadingMessage = "Scanning AI agent caches..."
-            loadingProgress = 0.9
-            let aiResults = await coordinator.cacheManager.findAIAgentCaches()
+
+            let preferences = PreferencesService.shared
+            var devResults: [DeveloperCache] = []
+            if preferences.scanIncludeDeveloperCaches {
+                loadingMessage = "Scanning developer caches..."
+                loadingProgress = 0.7
+                // The per-project artifact scan only runs against roots the user chose.
+                coordinator.cacheManager.projectScanRoots = preferences
+                    .projectArtifactScanRoots
+                    .map { URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath) }
+                devResults = await coordinator.cacheManager.findDeveloperCaches()
+            }
+
+            guard !Task.isCancelled else { return }
+
+            var aiResults: [AIAgentCache] = []
+            if preferences.scanIncludeAIAgentCaches {
+                loadingMessage = "Scanning AI agent caches..."
+                loadingProgress = 0.9
+                aiResults = await coordinator.cacheManager.findAIAgentCaches()
+            }
             
             guard !Task.isCancelled else { return }
 
+            // A few paths are claimed by both sweeps — `Code/CachedData` is a VS Code tool
+            // path and a Chromium cache subpath. The developer row wins because it names
+            // the tool; when developer scanning is off, nothing is claimed and the generic
+            // app-data row survives, so the bytes are never hidden either way.
+            let developerPaths = Set(devResults.map { $0.cacheLocation.path })
+            let appDataResults = allAppDataResults.filter { !developerPaths.contains($0.cacheLocation.path) }
+
             loggingService.debug(
-                "Cache scan results | system=\(systemResults.count) app=\(appResults.count) browser=\(browserResults.count) developer=\(devResults.count) ai=\(aiResults.count)"
+                "Cache scan results | system=\(systemResults.count) app=\(appResults.count) browser=\(browserResults.count) appData=\(appDataResults.count) developer=\(devResults.count) ai=\(aiResults.count)"
             )
 
             // Paths already claimed by a specific classification (browser/dev tool/AI agent).
@@ -155,6 +181,7 @@ class CleanupCandidatesViewModel: ObservableObject {
             // and create duplicate/overlapping groups (e.g. "Google" and "Android Studio").
             let claimedPaths: [String] =
                 browserResults.map { $0.cacheLocation.path } +
+                appDataResults.map { $0.cacheLocation.path } +
                 devResults.map { $0.cacheLocation.path } +
                 aiResults.map { $0.cacheLocation.path }
 
@@ -204,16 +231,26 @@ class CleanupCandidatesViewModel: ObservableObject {
                 ))
             }
             
-            for devCache in devResults {
+            for devCache in appDataResults + devResults {
                 loadedCandidates.append(CleanupCandidateData(
                     path: devCache.cacheLocation.path,
-                    name: devCache.description,
+                    name: devCache.displayName,
                     size: devCache.size,
                     modifiedDate: Date(),
                     accessedDate: Date(),
                     fileType: .cache,
                     category: .caches,
-                    groupLabel: groupLabel(forDeveloperTool: devCache.tool)
+                    groupLabel: groupLabel(forDeveloperCache: devCache),
+                    // Only scratch data and superseded, unreferenced versions start
+                    // checked. Everything else is an explicit user decision.
+                    isSelected: devCache.isDefaultSelected,
+                    safety: devCache.safety,
+                    version: devCache.version,
+                    isNewestVersion: devCache.isNewestVersion,
+                    referencedBy: devCache.referencedBy,
+                    requiresAdmin: devCache.scope == .system,
+                    needsFullDiskAccess: devCache.needsFullDiskAccess,
+                    isPartialSize: devCache.measurement == .partial
                 ))
             }
             
@@ -371,6 +408,13 @@ class CleanupCandidatesViewModel: ObservableObject {
 
     private func groupLabel(forDeveloperTool tool: DeveloperTool) -> String {
         Self.developerToolVendorAffiliation[tool] ?? tool.displayName
+    }
+
+    /// A scanner-supplied hint wins over the tool's name, so that rows the scanner splits
+    /// finer than the tool ("Claude", "Android SDK") land under their own heading.
+    /// Vendor affiliation still applies when there is no hint.
+    private func groupLabel(forDeveloperCache cache: DeveloperCache) -> String {
+        cache.groupHint ?? groupLabel(forDeveloperTool: cache.tool)
     }
 
     private func groupLabel(forAIAgent agent: AIAgent) -> String {
@@ -614,5 +658,51 @@ class CleanupCandidatesViewModel: ObservableObject {
         } else {
             selectAll()
         }
+    }
+
+    // MARK: - Group selection
+
+    /// Every item in the group is selected. False for an empty group.
+    func isGroupFullySelected(_ label: String) -> Bool {
+        let items = itemsInGroup(label)
+        return !items.isEmpty && items.allSatisfy { $0.isSelected }
+    }
+
+    /// Some but not all of the group is selected — drives the mixed-state checkbox.
+    func isGroupPartiallySelected(_ label: String) -> Bool {
+        let items = itemsInGroup(label)
+        return items.contains { $0.isSelected } && items.contains { !$0.isSelected }
+    }
+
+    /// The riskiest item in the group.
+    ///
+    /// Deliberately the worst case, not the average: a heading that reads green while it
+    /// hides one row that removes an emulator would be the one misleading light in the UI.
+    func riskLevel(inGroup label: String) -> CleanupCandidateData.RiskLevel {
+        itemsInGroup(label).map(\.riskLevel).max() ?? .safe
+    }
+
+    func selectedSize(inGroup label: String) -> Int64 {
+        itemsInGroup(label).filter(\.isSelected).reduce(0) { $0 + $1.size }
+    }
+
+    /// Select the whole group, or clear it when it is already fully selected.
+    func toggleGroupSelection(_ label: String) {
+        let shouldSelect = !isGroupFullySelected(label)
+        let ids = Set(itemsInGroup(label).map(\.id))
+
+        for index in filteredCandidates.indices where ids.contains(filteredCandidates[index].id) {
+            filteredCandidates[index].isSelected = shouldSelect
+        }
+        for index in candidates.indices where ids.contains(candidates[index].id) {
+            candidates[index].isSelected = shouldSelect
+        }
+    }
+
+    /// The visible items under a group heading. Mirrors `groupedCandidates`, so a group
+    /// toggle only ever touches what the user can actually see under that heading.
+    private func itemsInGroup(_ label: String) -> [CleanupCandidateData] {
+        guard selectedCategory == .caches else { return filteredCandidates }
+        return filteredCandidates.filter { ($0.groupLabel ?? $0.name) == label }
     }
 }

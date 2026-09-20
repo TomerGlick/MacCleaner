@@ -3,7 +3,6 @@ import SwiftUI
 struct CategoryDetailView: View {
     @ObservedObject var viewModel: StorageViewModel
     let category: StorageCategoryData
-    @State private var showingFileBrowser = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -21,19 +20,6 @@ struct CategoryDetailView: View {
                 
                 Spacer()
                 
-                // Browse Files button - uncomment when FileBrowserView is added to project
-                // if isBrowsableCategory {
-                //     Button(action: {
-                //         showingFileBrowser = true
-                //     }) {
-                //         HStack(spacing: 4) {
-                //             Image(systemName: "folder.badge.gearshape")
-                //             Text("Browse Files")
-                //         }
-                //     }
-                //     .buttonStyle(.borderedProminent)
-                // }
-                
                 if viewModel.navigationPath.count > 1 {
                     Button("Show All") {
                         viewModel.navigateToRoot()
@@ -41,7 +27,12 @@ struct CategoryDetailView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, 4)
+
+            // Breadcrumb trail
+            if viewModel.navigationPath.count > 1 {
+                BreadcrumbView(viewModel: viewModel)
+            }
             
             // Category header
             HStack {
@@ -49,9 +40,21 @@ struct CategoryDetailView: View {
                     .fill(category.color)
                     .frame(width: 16, height: 16)
                 
-                Text(category.name)
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(category.name)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+
+                    if let path = category.path {
+                        Text(path)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .help(path)
+                    }
+                }
                 
                 Spacer()
                 
@@ -67,14 +70,39 @@ struct CategoryDetailView: View {
             }
             
             Divider()
+
+            // Inline progress while sub-folder sizes are measured
+            if viewModel.isLoadingDetails {
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .controlSize(.small)
+
+                    Text("Measuring folder contents…")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    Button("Cancel") {
+                        viewModel.cancelDetailLoad()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.subheadline)
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+            }
             
             // Content area
             ScrollView {
                 VStack(spacing: 16) {
-                    // Subcategories
+                    // Sub-folders
                     if !category.subcategories.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Subcategories")
+                            Text("Folders")
                                 .font(.headline)
                                 .foregroundColor(.secondary)
                             
@@ -92,18 +120,26 @@ struct CategoryDetailView: View {
                     // Individual items
                     if !category.items.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text(category.subcategories.isEmpty ? "Items" : "Large Items")
+                            Text(category.subcategories.isEmpty ? "Items" : "Files")
                                 .font(.headline)
                                 .foregroundColor(.secondary)
                             
                             ForEach(category.items) { item in
-                                ItemRowView(item: item)
+                                ItemRowView(
+                                    item: item,
+                                    onSelect: item.type == .file ? nil : {
+                                        viewModel.selectItem(item, in: category)
+                                    },
+                                    onReveal: {
+                                        revealInFinder(item.path)
+                                    }
+                                )
                             }
                         }
                     }
                     
                     // Empty state
-                    if !category.hasDetails {
+                    if !category.hasDetails && !viewModel.isLoadingDetails {
                         VStack(spacing: 12) {
                             Image(systemName: "folder")
                                 .font(.system(size: 48))
@@ -129,33 +165,42 @@ struct CategoryDetailView: View {
             }
         }
         .padding()
-        // File browser integration - uncomment when FileBrowserView is added to project
-        // .sheet(isPresented: $showingFileBrowser) {
-        //     FileBrowserView(startPath: categoryPath)
-        //         .frame(minWidth: 900, minHeight: 600)
-        // }
     }
-    
-    // MARK: - Helpers
-    
-    private var isBrowsableCategory: Bool {
-        ["Documents", "Downloads", "Applications", "Caches"].contains(category.name)
+
+    private func revealInFinder(_ path: String) {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
-    
-    private var categoryPath: URL? {
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser
-        
-        switch category.name {
-        case "Documents":
-            return homeDir.appendingPathComponent("Documents")
-        case "Downloads":
-            return homeDir.appendingPathComponent("Downloads")
-        case "Applications":
-            return URL(fileURLWithPath: "/Applications")
-        case "Caches":
-            return homeDir.appendingPathComponent("Library/Caches")
-        default:
-            return nil
+}
+
+// MARK: - Breadcrumb
+
+struct BreadcrumbView: View {
+    @ObservedObject var viewModel: StorageViewModel
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 4) {
+                Button("All") {
+                    viewModel.navigateToRoot()
+                }
+                .buttonStyle(.plain)
+                .font(.caption)
+                .foregroundColor(.accentColor)
+
+                ForEach(Array(viewModel.navigationPath.enumerated()), id: \.element.id) { index, crumb in
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8))
+                        .foregroundColor(.secondary)
+
+                    Button(crumb.name) {
+                        viewModel.navigate(toDepth: index)
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption)
+                    .foregroundColor(index == viewModel.navigationPath.count - 1 ? .primary : .accentColor)
+                    .lineLimit(1)
+                }
+            }
         }
     }
 }
@@ -188,15 +233,37 @@ struct SubcategoryRowView: View {
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(subcategory.path ?? subcategory.name)
     }
 }
 
 struct ItemRowView: View {
     let item: StorageItemData
+    var onSelect: (() -> Void)?
+    var onReveal: (() -> Void)?
     
     var body: some View {
+        Group {
+            if let onSelect {
+                Button(action: onSelect) {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                rowContent
+            }
+        }
+        .contextMenu {
+            if let onReveal {
+                Button("Reveal in Finder", action: onReveal)
+            }
+        }
+    }
+
+    private var rowContent: some View {
         HStack {
             // Icon based on type
             Image(systemName: iconName)
@@ -213,6 +280,7 @@ struct ItemRowView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
+                    .truncationMode(.middle)
             }
             
             Spacer()
@@ -220,10 +288,17 @@ struct ItemRowView: View {
             Text(item.formattedSize)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+
+            if onSelect != nil {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .padding()
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(8)
+        .contentShape(Rectangle())
     }
     
     private var iconName: String {

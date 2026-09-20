@@ -164,6 +164,56 @@ struct PreferencesWindow: View {
                 Text("Developer")
                     .font(.headline)
             }
+
+            Section {
+                Toggle("Include developer tool caches", isOn: $viewModel.scanIncludeDeveloperCaches)
+                    .help("Xcode, Android SDK, Gradle, Kotlin/Native and similar")
+                Toggle("Include AI agent caches", isOn: $viewModel.scanIncludeAIAgentCaches)
+            } header: {
+                Text("Scan Coverage")
+                    .font(.headline)
+            } footer: {
+                Text("These only hide rows — scanning costs nothing on a machine that has none of these tools, since the paths simply do not exist. Chromium app caches (Chrome, Slack, Spotify) are always scanned.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                if viewModel.projectArtifactScanRoots.isEmpty {
+                    Text("No folders selected — project build artifacts are not scanned.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(viewModel.projectArtifactScanRoots, id: \.self) { root in
+                        HStack {
+                            Image(systemName: "folder")
+                                .foregroundColor(.secondary)
+                            Text(root)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Spacer()
+                            Button {
+                                viewModel.removeProjectScanRoot(root)
+                            } label: {
+                                Image(systemName: "minus.circle")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Stop scanning this folder")
+                        }
+                    }
+                }
+
+                Button("Add Folder…") {
+                    viewModel.addProjectScanRoot()
+                }
+            } header: {
+                Text("Project Build Artifacts")
+                    .font(.headline)
+            } footer: {
+                Text("Scans the folders you choose for regenerable build output — build/, node_modules/, DerivedData/, Pods/ and similar. A directory is only offered when a project file sits beside it, and symlinks are never followed out of the folder you picked.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
             
             Section {
                 Text("Moving files to Trash is safer as it allows recovery. Permanent deletion immediately removes files and cannot be undone.")

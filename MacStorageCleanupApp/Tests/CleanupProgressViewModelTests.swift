@@ -5,6 +5,26 @@ import XCTest
 /// Validates Requirement 9.5: Cleanup progress display and cancellation
 @MainActor
 final class CleanupProgressViewModelTests: XCTestCase {
+
+    /// Scratch directory holding the fixture files. Cleanup deletes real files, so the
+    /// fixtures have to exist — pointing at paths that were never created makes the
+    /// engine report every deletion as a failure and `spaceFreed` stays zero.
+    private var tempDirectory: URL!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CleanupProgressViewModelTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        if let tempDirectory {
+            try? FileManager.default.removeItem(at: tempDirectory)
+        }
+        tempDirectory = nil
+        try super.tearDownWithError()
+    }
     
     // MARK: - Initialization Tests
     
@@ -258,10 +278,15 @@ final class CleanupProgressViewModelTests: XCTestCase {
     
     private func createSampleFiles(count: Int) -> [CleanupCandidateData] {
         return (0..<count).map { index in
-            CleanupCandidateData(
-                path: "/tmp/file\(index).tmp",
-                name: "file\(index).tmp",
-                size: Int64((index + 1) * 1_000_000), // 1MB, 2MB, 3MB, etc.
+            let size = (index + 1) * 1_000_000  // 1MB, 2MB, 3MB, ...
+            let url = tempDirectory.appendingPathComponent("file\(index).tmp")
+            // Written for real, so a cleanup run has something to delete and report.
+            try? Data(count: size).write(to: url)
+
+            return CleanupCandidateData(
+                path: url.path,
+                name: url.lastPathComponent,
+                size: Int64(size),
                 modifiedDate: Date(),
                 accessedDate: Date(),
                 fileType: .temporary,

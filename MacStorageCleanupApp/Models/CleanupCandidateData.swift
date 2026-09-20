@@ -1,4 +1,6 @@
 import Foundation
+import SwiftUI
+import MacStorageCleanupCore
 
 /// Represents a file that is a candidate for cleanup with all required metadata
 struct CleanupCandidateData: Identifiable {
@@ -14,7 +16,97 @@ struct CleanupCandidateData: Identifiable {
     /// Defaults to the item's own name when no specific grouping applies.
     var groupLabel: String? = nil
     var isSelected: Bool = false
-    
+
+    // MARK: - Developer cache metadata
+    //
+    // Multi-version caches cannot be judged by size and date alone: a 3 GB NDK that a
+    // project pins is not the same decision as an identical one nothing references.
+    // These fields carry that context from the scanner to the row.
+
+    /// How risky deleting this is. Drives the default selection.
+    var safety: CacheSafety? = nil
+    /// Version this entry belongs to, when its tool keeps one directory per version.
+    var version: String? = nil
+    /// False marks a superseded version.
+    var isNewestVersion: Bool = true
+    /// Project files that pin this version. Non-empty means "keep".
+    var referencedBy: [URL] = []
+    /// Reclaiming this needs administrator rights.
+    var requiresAdmin: Bool = false
+    /// The size is understated because the path is TCC-protected.
+    var needsFullDiskAccess: Bool = false
+    /// The size is a lower bound because measurement hit its time budget.
+    var isPartialSize: Bool = false
+
+    /// Traffic-light risk of deleting this row.
+    ///
+    /// Three tiers, and the boundary that matters is between green and amber: green
+    /// promises nothing is lost *and* nothing is fetched again, amber costs time only,
+    /// red can cost work or configuration.
+    enum RiskLevel: Int, Comparable, CaseIterable {
+        case safe       // scratch data — delete freely
+        case moderate   // regenerates: a rebuild or a re-download
+        case risky      // could lose a device, a scheme, or need admin rights
+
+        static func < (lhs: RiskLevel, rhs: RiskLevel) -> Bool { lhs.rawValue < rhs.rawValue }
+
+        var color: Color {
+            switch self {
+            case .safe: return .green
+            case .moderate: return .yellow
+            case .risky: return .red
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .safe: return "Safe"
+            case .moderate: return "Regenerates"
+            case .risky: return "Review first"
+            }
+        }
+
+        var explanation: String {
+            switch self {
+            case .safe: return "Scratch data. Nothing is lost and nothing is downloaded again."
+            case .moderate: return "Your tools rebuild or re-download this. Costs time, not work."
+            case .risky: return "Could remove a device, a scheme or an install. Check before deleting."
+            }
+        }
+    }
+
+    var riskLevel: RiskLevel {
+        // Unreadable means we cannot even judge it, which is its own reason to look.
+        if needsFullDiskAccess { return .risky }
+
+        switch safety {
+        case .alwaysSafe: return .safe
+        case .needsConfirmation: return .risky
+        // Generic system, browser and app caches arrive without a safety tier. They are
+        // caches: the app refills them on next use.
+        case .regenerates, nil: return .moderate
+        }
+    }
+
+    /// Short explanation of why this row is (or is not) checked by default.
+    var safetyNote: String? {
+        if needsFullDiskAccess {
+            return "Permission needed — grant Full Disk Access to measure this"
+        }
+        if !referencedBy.isEmpty {
+            let names = referencedBy.prefix(2).map { $0.lastPathComponent }.joined(separator: ", ")
+            return referencedBy.count > 2
+                ? "Pinned by \(names) and \(referencedBy.count - 2) more"
+                : "Pinned by \(names)"
+        }
+        switch safety {
+        case .alwaysSafe: return "Scratch data — safe to remove"
+        case .regenerates: return isNewestVersion ? "Newest version — in active use" : "Superseded version, nothing references it"
+        case .needsConfirmation: return requiresAdmin ? "Needs administrator rights" : "Review before removing"
+        case nil: return nil
+        }
+    }
+
     enum FileType: String {
         case cache
         case temporary

@@ -11,6 +11,8 @@ class StorageViewModel: ObservableObject {
     @Published var categoryData: [StorageCategoryData] = []
     @Published var selectedCategory: StorageCategoryData?
     @Published var navigationPath: [StorageCategoryData] = []
+    /// True while sub-folder sizes for the selected category are being computed.
+    @Published var isLoadingDetails = false
     
     // Scan state
     @Published var isScanning = false
@@ -24,8 +26,13 @@ class StorageViewModel: ObservableObject {
     @Published var scanIncludeLargeFiles = true
     @Published var scanIncludeOldFiles = true
     @Published var scanIncludeLogFiles = true
-    @Published var scanIncludeDeveloperCaches = true
-    @Published var scanIncludeAIAgentCaches = true
+    /// Persisted, so the cleanup page honours the same choice the scan page shows.
+    @Published var scanIncludeDeveloperCaches = PreferencesService.shared.scanIncludeDeveloperCaches {
+        didSet { PreferencesService.shared.scanIncludeDeveloperCaches = scanIncludeDeveloperCaches }
+    }
+    @Published var scanIncludeAIAgentCaches = PreferencesService.shared.scanIncludeAIAgentCaches {
+        didSet { PreferencesService.shared.scanIncludeAIAgentCaches = scanIncludeAIAgentCaches }
+    }
     
     private var fileScanner: FileScanner?
     private let coordinator: ApplicationCoordinator
@@ -151,20 +158,48 @@ class StorageViewModel: ObservableObject {
 
         scheduleCategoryDetailsLoad(for: category)
     }
+
+    /// Drill into a directory item listed inside a category.
+    func selectItem(_ item: StorageItemData, in category: StorageCategoryData) {
+        guard item.type != .file else { return }
+
+        selectCategory(
+            StorageCategoryData(
+                item: item,
+                totalCapacity: totalCapacity,
+                color: category.color,
+                isDeletable: category.isDeletable
+            )
+        )
+    }
     
     func navigateBack() {
         guard !navigationPath.isEmpty else { return }
-        detailLoadTask?.cancel()
-        detailLoadTask = nil
+        cancelDetailLoad()
         navigationPath.removeLast()
+        selectedCategory = navigationPath.last
+    }
+
+    /// Jump to a specific level of the breadcrumb trail.
+    func navigate(toDepth depth: Int) {
+        guard depth >= 0, depth < navigationPath.count else { return }
+        cancelDetailLoad()
+        navigationPath.removeSubrange((depth + 1)..<navigationPath.count)
         selectedCategory = navigationPath.last
     }
     
     func navigateToRoot() {
-        detailLoadTask?.cancel()
-        detailLoadTask = nil
+        cancelDetailLoad()
         navigationPath.removeAll()
         selectedCategory = nil
+    }
+
+    /// Stops an in-flight sub-folder measurement and clears its spinner.
+    func cancelDetailLoad() {
+        detailLoadToken = UUID()
+        detailLoadTask?.cancel()
+        detailLoadTask = nil
+        isLoadingDetails = false
     }
 
     func cancelStorageAnalysis() {
@@ -175,6 +210,7 @@ class StorageViewModel: ObservableObject {
         storageAnalysisTask = nil
         detailLoadTask = nil
         isLoading = false
+        isLoadingDetails = false
 
         Task {
             await storageAnalysisService.cancelSession()
@@ -187,13 +223,16 @@ class StorageViewModel: ObservableObject {
         detailLoadTask?.cancel()
         let token = UUID()
         detailLoadToken = token
+        isLoadingDetails = true
 
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
 
-            guard self.categoryData.contains(where: { $0.id == category.id }) else {
-                self.loggingService.warning("Category detail load skipped because \(category.name) was not found in category data")
-                return
+            defer {
+                if self.detailLoadToken == token {
+                    self.isLoadingDetails = false
+                    self.detailLoadTask = nil
+                }
             }
 
             do {
@@ -209,10 +248,6 @@ class StorageViewModel: ObservableObject {
                 self.loggingService.debug("Category detail loading cancelled for \(category.name)")
             } catch {
                 self.loggingService.error("Category detail loading failed for \(category.name)", error: error)
-            }
-
-            if self.detailLoadToken == token {
-                self.detailLoadTask = nil
             }
         }
 
@@ -253,6 +288,7 @@ class StorageViewModel: ObservableObject {
                 totalCapacity: totalCapacity,
                 color: updatedCategory.color,
                 isDeletable: updatedCategory.isDeletable,
+                path: updatedCategory.path,
                 subcategories: updatedCategory.subcategories,
                 items: updatedCategory.items
             )

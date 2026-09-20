@@ -16,10 +16,26 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **System & Application Caches** - Remove cached data from system and applications
 - **Browser Caches** - Clean Safari, Chrome, Firefox, Edge, and Brave caches
 - **Developer Tool Caches** - Clear Xcode, CocoaPods, npm, Gradle, and more
+- **Multi-Version Toolchains** - The dominant way developer disk space disappears is one
+  directory per version, kept forever. Each version gets its own row so you can see it:
+  - **Android SDK** - NDK, system images, build tools, platforms and sources, per version
+    (removed with `sdkmanager --uninstall`)
+  - **Android Emulators** - AVDs with their display names (`avdmanager delete avd`)
+  - **Gradle** - `caches/<version>` split per version, plus wrapper distributions,
+    dependency jars, build cache and scratch directories listed separately
+  - **Kotlin/Native** - one row per `~/.konan` prebuilt compiler
 - **Xcode Simulators** - Delete iOS/iPadOS simulator devices and runtimes
   - Individual simulator devices with names (e.g., "iPhone 15 Pro - iOS 18.2")
   - Simulator runtime assets (uses `xcrun simctl runtime delete`)
-  - DerivedData, Archives, and Device Support files
+  - Device Support grouped by device model, keeping only the newest build
+  - DerivedData, Archives, Coding Assistant and build Products
+- **App Caches (Electron/Chromium)** - Every app under Application Support, including each
+  browser profile, swept for `Cache`, `Code Cache`, `GPUCache`, service worker storage and
+  crash reports. Never the app's own data directory
+- **Project Build Artifacts** *(opt-in)* - `build/`, `node_modules/`, `DerivedData/`,
+  `Pods/`, `.build/` and friends inside folders you nominate
+- **APFS Local Snapshots** - The usual answer to "Finder says the disk is full but nothing
+  adds up"
 - **AI Agent Caches** - Remove caches from ChatGPT, Claude, Cursor, and other AI tools
 - **Temporary Files** - Delete temporary files and logs
 - **Large Files** - Find and manage files over 100MB
@@ -29,6 +45,26 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Log Files** - Clear accumulated application and system logs
 
 ### 🛡️ Safety First
+- **Risk Indicators** - Every row and group heading carries a traffic-light dot, explained
+  by a legend above the list:
+  - 🟢 **Safe** - scratch data; nothing is lost and nothing is downloaded again
+  - 🟡 **Regenerates** - your tools rebuild or re-download it; costs time, not work
+  - 🔴 **Review first** - could remove a device, a scheme or an install, or needs admin
+  A group shows the *riskiest* item under it, never an average
+- **Nothing Risky Pre-Selected** - Only green items and superseded versions that no project
+  references start out ticked. Everything else is a deliberate choice
+- **Reference Detection** - Before offering an old NDK, Gradle or build-tools version, your
+  projects are searched for `ndkVersion`, `buildToolsVersion`, `ndk.dir`,
+  `gradle-wrapper.properties` and CI variables. Pinned versions are kept and the files that
+  pin them are shown
+- **Group Select** - One checkbox per heading takes or clears a whole group, with a mixed
+  state when only part of it is selected
+- **Tool-Owned Deletion** - `simctl`, `avdmanager`, `sdkmanager`, `brew` and `uv` are used
+  in preference to `rm`, so each tool's own index stays consistent
+- **Honest Sizes** - Allocated size is reported rather than logical size, so APFS clones and
+  sparse simulator images do not overstate what you will actually reclaim
+- **Permission Visibility** - A protected folder reports "permission needed" instead of
+  silently reporting 0 bytes
 - **Safe List Protection** - Critical system files are automatically protected
 - **Backup Support** - Optional backup before deletion
 - **Move to Trash** - Files moved to Trash by default (recoverable)
@@ -76,6 +112,8 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 ![Storage Analysis](screenshots/main-window.png)
 
 ### Cleanup Candidates
+Grouped by tool, with risk dots, per-group selection and per-group totals.
+
 ![Cleanup Candidates](screenshots/cleanup-candidates.png)
 
 ### Cleanup in Progress
@@ -251,9 +289,22 @@ cd MacStorageCleanup && swift build
 xcodebuild test -scheme MacStorageCleanupApp
 ```
 
-Categorization edge cases are covered in `CleanupCategorizerTests` — case-insensitive browser cache
-detection, Application Support temporary paths, deterministic age thresholds, and protected/app-bundle
-exclusions from old-file sweeps.
+`xcodebuild test` runs the `MacStorageCleanupAppTests` target, which covers the view-model and
+presentation layer: the risk mapping, the group checkbox tri-state, and the cleanup progress model.
+
+Notable core coverage:
+
+- `CleanupCategorizerTests` — case-insensitive browser cache detection, Application Support
+  temporary paths, deterministic age thresholds, and protected/app-bundle exclusions from
+  old-file sweeps
+- `DirectorySizerTests` — hidden entries are counted, symlinks are not followed, mount points
+  answer from `statfs`, and an unreadable directory reports "permission needed" rather than
+  zero bytes
+- `ProjectReferenceIndexTests` — parsing of `gradle-wrapper.properties`, `ndkVersion`,
+  `buildToolsVersion`, `ndk.dir` and CI environment variables
+- `ProjectArtifactScannerTests` — a `build/` folder with no project file beside it is never
+  offered, and symlinks cannot walk the scan out of the chosen root
+- `DeveloperCacheSafetyTests` — what is pre-selected, and the path-to-tool-command mapping
 
 ## 🤝 Contributing
 

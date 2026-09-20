@@ -36,7 +36,44 @@ struct CandidateDetailView: View {
                     .foregroundColor(.secondary)
             }
             .padding()
-            
+
+            // The project files that pin this version. Showing them is what makes the
+            // "keep this one" decision reviewable instead of a leap of faith.
+            if !candidate.referencedBy.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Pinned by \(candidate.referencedBy.count) project file(s)", systemImage: "pin.fill")
+                        .font(.subheadline)
+                        .foregroundColor(.orange)
+
+                    ForEach(candidate.referencedBy, id: \.self) { reference in
+                        Button {
+                            NSWorkspace.shared.selectFile(reference.path, inFileViewerRootedAtPath: "")
+                        } label: {
+                            Text(reference.path)
+                                .font(.caption)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        .buttonStyle(.link)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
+
+            if candidate.needsFullDiskAccess {
+                Label(
+                    "This location is protected by macOS privacy settings. Grant Full Disk Access in System Settings › Privacy & Security to measure and clean it.",
+                    systemImage: "lock.fill"
+                )
+                .font(.caption)
+                .foregroundColor(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
+
             Divider()
             
             // Toolbar
