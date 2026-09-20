@@ -101,9 +101,19 @@ class PreferencesService {
         set { updatePreference(\.scanIncludeAIAgentCaches, value: newValue) }
     }
 
-    var projectArtifactScanRoots: [String] {
-        get { loadPreferences().projectArtifactScanRoots }
-        set { updatePreference(\.projectArtifactScanRoots, value: newValue) }
+    var projectFolders: [String] {
+        get { loadPreferences().projectFolders }
+        set { updatePreference(\.projectFolders, value: newValue) }
+    }
+
+    var hasPromptedForProjectFolders: Bool {
+        get { loadPreferences().hasPromptedForProjectFolders }
+        set { updatePreference(\.hasPromptedForProjectFolders, value: newValue) }
+    }
+
+    var scanProjectBuildArtifacts: Bool {
+        get { loadPreferences().scanProjectBuildArtifacts }
+        set { updatePreference(\.scanProjectBuildArtifacts, value: newValue) }
     }
     
     // MARK: - Validation

@@ -8,7 +8,8 @@ struct MainWindowView: View {
     @State private var showingApplications = false
     @State private var showingBackups = false
     @State private var showingFileBrowser = false
-    @State private var selectedTab: MainTab = .storage
+    /// Opens on Cleanup, matching the sidebar order and what the app is for.
+    @State private var selectedTab: MainTab = .cleanup
     
     enum MainTab {
         case storage
@@ -39,17 +40,19 @@ struct MainWindowView: View {
                 
                 // Sidebar list
                 List(selection: $selectedTab) {
+                    // Cleanup leads: it is what the app is for. Storage analysis explains
+                    // the problem, but reclaiming space is the reason anyone opened this.
+                    Section("Cleanup") {
+                        Label("Cleanup Candidates", systemImage: "trash")
+                            .tag(MainTab.cleanup)
+                    }
+
                     Section("Overview") {
                         Label("Storage", systemImage: "internaldrive")
                             .tag(MainTab.storage)
                         
                         Label("Files", systemImage: "folder")
                             .tag(MainTab.files)
-                    }
-                    
-                    Section("Cleanup") {
-                        Label("Cleanup Candidates", systemImage: "trash")
-                            .tag(MainTab.cleanup)
                     }
                     
                     Section("Management") {
@@ -64,7 +67,7 @@ struct MainWindowView: View {
                 Spacer()
                 
                 Divider()
-                
+
                 // Settings button at bottom
                 Button(action: {
                     showingPreferences = true

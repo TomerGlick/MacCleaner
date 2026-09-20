@@ -9,6 +9,10 @@ public protocol CacheManager: AnyObject {
     /// against a default location — the user names the roots.
     var projectScanRoots: [URL] { get set }
 
+    /// Folders the user named as holding their code. Empty means fall back to guessing
+    /// conventional folder names, which misses anything kept somewhere unconventional.
+    var projectFolders: [URL] { get set }
+
     func findSystemCaches() async -> [FileMetadata]
     func findApplicationCaches() async -> [FileMetadata]
     func findBrowserCaches() async -> [BrowserCache]
@@ -491,6 +495,8 @@ public class DefaultCacheManager: CacheManager {
     let sizer: DirectorySizer
     /// Optional roots for the opt-in per-project build artifact scan. Empty disables it.
     public var projectScanRoots: [URL] = []
+    /// Folders the user named as holding their code, used to detect version pins.
+    public var projectFolders: [URL] = []
 
     public init(safeListManager: SafeListManager = DefaultSafeListManager(), sizer: DirectorySizer = DirectorySizer()) {
         self.safeListManager = safeListManager
@@ -676,7 +682,8 @@ public class DefaultCacheManager: CacheManager {
         DeveloperCacheScanner(
             sizer: sizer,
             homeDir: NSHomeDirectory(),
-            projectScanRoots: projectScanRoots
+            projectScanRoots: projectScanRoots,
+            projectFolders: projectFolders
         )
     }
 

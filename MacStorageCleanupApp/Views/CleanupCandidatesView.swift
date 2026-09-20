@@ -24,6 +24,9 @@ struct CleanupCandidatesView: View {
     @State private var showingPreview = false
     @State private var expandedGroups: Set<String> = []
     @State private var hasInitializedGroupExpansion = false
+    @State private var showingProjectFoldersPrompt = false
+    /// Mirrors the stored folders so the shortcut's label updates as soon as they change.
+    @State private var projectFolders: [String] = PreferencesService.shared.projectFolders
     
     init(category: CleanupCandidateData.CleanupCategoryType, storageViewModel: StorageViewModel) {
         _viewModel = StateObject(wrappedValue: CleanupCandidatesViewModel(category: category))
@@ -64,11 +67,7 @@ struct CleanupCandidatesView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                     
-                    Button(action: {
-                        Task {
-                            await viewModel.loadCandidates()
-                        }
-                    }) {
+                    Button(action: { startScan() }) {
                         Label("Scan", systemImage: "magnifyingglass")
                             .font(.headline)
                             .padding(.horizontal, 24)
@@ -166,6 +165,19 @@ struct CleanupCandidatesView: View {
                 FilterPopoverView(viewModel: viewModel)
             }
             
+            // Re-run the scan. Sizes and pins go stale as soon as a build runs or a
+            // cleanup completes, and until now the only way to rescan was to leave the
+            // page and come back.
+            Button(action: { startScan() }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Rescan")
+                }
+            }
+            .disabled(viewModel.isLoading)
+            .keyboardShortcut("r", modifiers: .command)
+            .help("Scan again (⌘R)")
+
             // Select all checkbox
             Button(action: { viewModel.toggleSelectAll() }) {
                 HStack(spacing: 4) {
@@ -173,6 +185,7 @@ struct CleanupCandidatesView: View {
                     Text(viewModel.allSelected ? "Deselect All" : "Select All")
                 }
             }
+            .disabled(viewModel.filteredCandidates.isEmpty)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -196,10 +209,39 @@ struct CleanupCandidatesView: View {
             Text("Only green and superseded amber items are ticked for you")
                 .font(.caption2)
                 .foregroundColor(.secondary)
+
+            if viewModel.selectedCategory == .caches {
+                Divider().frame(height: 12)
+                projectFoldersShortcut
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 6)
         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+    }
+
+    /// Opens the project folders picker from the page whose results depend on it.
+    ///
+    /// The label doubles as status: whether the app is reading real folders or falling
+    /// back to guessing is exactly what decides if a pinned version is protected, so it
+    /// belongs next to the rows rather than buried in Preferences.
+    private var projectFoldersShortcut: some View {
+        Button {
+            showingProjectFoldersPrompt = true
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: projectFolders.isEmpty ? "folder.badge.questionmark" : "folder.fill")
+                Text(projectFolders.isEmpty
+                     ? "Guessing project folders"
+                     : "\(projectFolders.count) project folder\(projectFolders.count == 1 ? "" : "s")")
+            }
+            .font(.caption)
+        }
+        .buttonStyle(.borderless)
+        .foregroundColor(projectFolders.isEmpty ? .orange : .secondary)
+        .help(projectFolders.isEmpty
+              ? "No folders set — the app guesses where your code lives, so a version pinned by a project it cannot find may be offered for deletion. Click to choose."
+              : projectFolders.map { ($0 as NSString).abbreviatingWithTildeInPath }.joined(separator: "\n"))
     }
 
     private var fileListView: some View {
@@ -414,6 +456,22 @@ struct RotatingMagnifierView: View {
 }
 
 private extension CleanupCandidatesView {
+    /// Ask where the user's code lives before the first developer cache scan, since that
+    /// scan's safety decisions depend on the answer. Only ever asked once.
+    func startScan() {
+        let preferences = PreferencesService.shared
+        let shouldAsk = viewModel.selectedCategory == .caches
+            && preferences.scanIncludeDeveloperCaches
+            && !preferences.hasPromptedForProjectFolders
+
+        if shouldAsk {
+            showingProjectFoldersPrompt = true
+            return
+        }
+
+        Task { await viewModel.loadCandidates() }
+    }
+
     var footerView: some View {
         HStack {
             if viewModel.selectedCount > 0 {
@@ -443,7 +501,26 @@ private extension CleanupCandidatesView {
                 showingPreview = true
             }
             .disabled(viewModel.selectedCount == 0)
-            .sheet(isPresented: $showingPreview) {
+            .sheet(isPresented: $showingProjectFoldersPrompt) {
+            ProjectFoldersPrompt(initialFolders: projectFolders) { chosen in
+                let preferences = PreferencesService.shared
+                // Recorded even when declined: that is an answer, and re-asking on every
+                // scan would be worse than guessing.
+                preferences.hasPromptedForProjectFolders = true
+
+                if let chosen {
+                    preferences.projectFolders = chosen
+                    projectFolders = chosen
+                }
+
+                // Pins decide which rows are pre-ticked, so a change has to re-scan —
+                // except on a first run that was declined, where there is nothing yet.
+                if chosen != nil || viewModel.candidates.isEmpty {
+                    Task { await viewModel.loadCandidates() }
+                }
+            }
+        }
+        .sheet(isPresented: $showingPreview) {
                 CleanupPreviewView(selectedFiles: viewModel.selectedFiles) { cleanedPaths in
                     // Remove cleaned files from list instantly
                     viewModel.removeCleanedFiles(cleanedPaths)

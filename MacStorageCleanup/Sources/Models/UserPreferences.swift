@@ -39,12 +39,21 @@ public struct UserPreferences: Codable, Equatable {
     public var scanIncludeDeveloperCaches: Bool
     /// Whether cleanup scans include AI coding agent caches.
     public var scanIncludeAIAgentCaches: Bool
-    /// Roots for the opt-in per-project build artifact scan.
+    /// Folders where the user keeps source code.
     ///
-    /// Empty by default and deliberately so: this is the only scan that walks the user's
-    /// own source tree rather than a cache directory, so it never runs until the user
-    /// names the folders it may look at.
-    public var projectArtifactScanRoots: [String]
+    /// Used to find which toolchain versions a project pins, so an NDK or Gradle version
+    /// still in use is never offered for deletion. When empty the app falls back to
+    /// guessing conventional folder names, which is only ever a guess — asking is the
+    /// whole point of this setting.
+    public var projectFolders: [String]
+    /// Whether the user has been offered the chance to name their project folders. Asked
+    /// once; declining is a valid answer and must not be re-asked on every scan.
+    public var hasPromptedForProjectFolders: Bool
+    /// Whether regenerable build output inside `projectFolders` is offered for cleanup.
+    /// Separate from the folders themselves: pointing the app at your code so it can read
+    /// version pins is a much smaller ask than letting it offer that code's output for
+    /// deletion.
+    public var scanProjectBuildArtifacts: Bool
     
     /// Default preferences
     public static let `default` = UserPreferences(
@@ -60,7 +69,9 @@ public struct UserPreferences: Codable, Equatable {
         debugMode: false,
         scanIncludeDeveloperCaches: true,
         scanIncludeAIAgentCaches: true,
-        projectArtifactScanRoots: []
+        projectFolders: [],
+        hasPromptedForProjectFolders: false,
+        scanProjectBuildArtifacts: false
     )
     
     /// Safe categories that can be included in scheduled cleanup
@@ -89,7 +100,9 @@ public struct UserPreferences: Codable, Equatable {
         debugMode: Bool = false,
         scanIncludeDeveloperCaches: Bool = true,
         scanIncludeAIAgentCaches: Bool = true,
-        projectArtifactScanRoots: [String] = []
+        projectFolders: [String] = [],
+        hasPromptedForProjectFolders: Bool = false,
+        scanProjectBuildArtifacts: Bool = false
     ) {
         self.showMenuBarIcon = showMenuBarIcon
         self.launchAtLogin = launchAtLogin
@@ -103,7 +116,9 @@ public struct UserPreferences: Codable, Equatable {
         self.debugMode = debugMode
         self.scanIncludeDeveloperCaches = scanIncludeDeveloperCaches
         self.scanIncludeAIAgentCaches = scanIncludeAIAgentCaches
-        self.projectArtifactScanRoots = projectArtifactScanRoots
+        self.projectFolders = projectFolders
+        self.hasPromptedForProjectFolders = hasPromptedForProjectFolders
+        self.scanProjectBuildArtifacts = scanProjectBuildArtifacts
     }
 
     enum CodingKeys: String, CodingKey {
@@ -119,7 +134,32 @@ public struct UserPreferences: Codable, Equatable {
         case debugMode
         case scanIncludeDeveloperCaches
         case scanIncludeAIAgentCaches
+        case projectFolders
+        case hasPromptedForProjectFolders
+        case scanProjectBuildArtifacts
+        /// Pre-1.5 name, when the folders existed only to drive the build artifact scan.
         case projectArtifactScanRoots
+    }
+
+    /// Written explicitly because `projectArtifactScanRoots` is a read-only compatibility
+    /// key with no property behind it, which defeats the synthesized encoder.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(showMenuBarIcon, forKey: .showMenuBarIcon)
+        try container.encode(launchAtLogin, forKey: .launchAtLogin)
+        try container.encode(enableScheduledCleanup, forKey: .enableScheduledCleanup)
+        try container.encode(scheduledCleanupInterval, forKey: .scheduledCleanupInterval)
+        try container.encode(scheduledCategories, forKey: .scheduledCategories)
+        try container.encode(createBackupsByDefault, forKey: .createBackupsByDefault)
+        try container.encode(moveToTrashByDefault, forKey: .moveToTrashByDefault)
+        try container.encode(oldFileThresholdDays, forKey: .oldFileThresholdDays)
+        try container.encode(largeFileSizeThresholdMB, forKey: .largeFileSizeThresholdMB)
+        try container.encode(debugMode, forKey: .debugMode)
+        try container.encode(scanIncludeDeveloperCaches, forKey: .scanIncludeDeveloperCaches)
+        try container.encode(scanIncludeAIAgentCaches, forKey: .scanIncludeAIAgentCaches)
+        try container.encode(projectFolders, forKey: .projectFolders)
+        try container.encode(hasPromptedForProjectFolders, forKey: .hasPromptedForProjectFolders)
+        try container.encode(scanProjectBuildArtifacts, forKey: .scanProjectBuildArtifacts)
     }
 
     public init(from decoder: Decoder) throws {
@@ -138,6 +178,15 @@ public struct UserPreferences: Codable, Equatable {
         debugMode = try container.decodeIfPresent(Bool.self, forKey: .debugMode) ?? defaults.debugMode
         scanIncludeDeveloperCaches = try container.decodeIfPresent(Bool.self, forKey: .scanIncludeDeveloperCaches) ?? defaults.scanIncludeDeveloperCaches
         scanIncludeAIAgentCaches = try container.decodeIfPresent(Bool.self, forKey: .scanIncludeAIAgentCaches) ?? defaults.scanIncludeAIAgentCaches
-        projectArtifactScanRoots = try container.decodeIfPresent([String].self, forKey: .projectArtifactScanRoots) ?? defaults.projectArtifactScanRoots
+        // Folders that were previously set only for the build artifact scan keep working,
+        // and keep that scan enabled — the user had already opted into it.
+        let legacyRoots = try container.decodeIfPresent([String].self, forKey: .projectArtifactScanRoots)
+        projectFolders = try container.decodeIfPresent([String].self, forKey: .projectFolders)
+            ?? legacyRoots
+            ?? defaults.projectFolders
+        hasPromptedForProjectFolders = try container.decodeIfPresent(Bool.self, forKey: .hasPromptedForProjectFolders)
+            ?? !(legacyRoots ?? []).isEmpty
+        scanProjectBuildArtifacts = try container.decodeIfPresent(Bool.self, forKey: .scanProjectBuildArtifacts)
+            ?? !(legacyRoots ?? []).isEmpty
     }
 }

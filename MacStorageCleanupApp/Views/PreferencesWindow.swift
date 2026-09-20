@@ -184,12 +184,12 @@ struct PreferencesWindow: View {
             }
 
             Section {
-                if viewModel.projectArtifactScanRoots.isEmpty {
-                    Text("No folders selected — project build artifacts are not scanned.")
+                if viewModel.projectFolders.isEmpty {
+                    Text("No folders chosen — the app guesses at the usual folder names instead.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 } else {
-                    ForEach(viewModel.projectArtifactScanRoots, id: \.self) { root in
+                    ForEach(viewModel.projectFolders, id: \.self) { root in
                         HStack {
                             Image(systemName: "folder")
                                 .foregroundColor(.secondary)
@@ -198,7 +198,7 @@ struct PreferencesWindow: View {
                                 .truncationMode(.middle)
                             Spacer()
                             Button {
-                                viewModel.removeProjectScanRoot(root)
+                                viewModel.removeProjectFolder(root)
                             } label: {
                                 Image(systemName: "minus.circle")
                             }
@@ -209,13 +209,17 @@ struct PreferencesWindow: View {
                 }
 
                 Button("Add Folder…") {
-                    viewModel.addProjectScanRoot()
+                    viewModel.addProjectFolder()
                 }
+
+                Toggle("Also offer build output in these folders for cleanup", isOn: $viewModel.scanProjectBuildArtifacts)
+                    .disabled(viewModel.projectFolders.isEmpty)
+                    .help("build/, node_modules/, DerivedData/, Pods/ and similar. Only offered when a project file sits beside them, and symlinks are never followed out of the folder.")
             } header: {
-                Text("Project Build Artifacts")
+                Text("Project Folders")
                     .font(.headline)
             } footer: {
-                Text("Scans the folders you choose for regenerable build output — build/, node_modules/, DerivedData/, Pods/ and similar. A directory is only offered when a project file sits beside it, and symlinks are never followed out of the folder you picked.")
+                Text("Used to read which toolchain versions your projects pin, so a version still in use is never offered for deletion. With no folders chosen the app guesses at conventional names and misses code kept elsewhere.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -405,7 +409,7 @@ struct PreferencesWindow: View {
                 }
             }
             .frame(maxWidth: 400)
-            
+
             Spacer()
             
             Text("© 2026 Mac Storage Cleanup")

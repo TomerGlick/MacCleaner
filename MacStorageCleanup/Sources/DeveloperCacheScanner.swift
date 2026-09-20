@@ -18,6 +18,8 @@ struct DeveloperCacheScanner {
     let homeDir: String
     /// Roots for the opt-in per-project build artifact scan. Empty disables it.
     let projectScanRoots: [URL]
+    /// Folders the user named as holding their code. Empty falls back to guessing.
+    let projectFolders: [URL]
     let fileManager: FileManager
     private let logger = Logger(subsystem: "com.macstoragecleanup.core", category: "devscan")
 
@@ -25,11 +27,13 @@ struct DeveloperCacheScanner {
         sizer: DirectorySizer,
         homeDir: String = NSHomeDirectory(),
         projectScanRoots: [URL] = [],
+        projectFolders: [URL] = [],
         fileManager: FileManager = .default
     ) {
         self.sizer = sizer
         self.homeDir = homeDir
         self.projectScanRoots = projectScanRoots
+        self.projectFolders = projectFolders
         self.fileManager = fileManager
     }
 
@@ -52,7 +56,11 @@ struct DeveloperCacheScanner {
         let references: ProjectReferenceIndex
         if hasVersionedToolchains {
             let start = Date()
-            references = ProjectReferenceIndex.build()
+            // Folders the user named beat guessed ones, and are searched deeper: an
+            // explicit answer deserves more trust than a convention match.
+            references = projectFolders.isEmpty
+                ? ProjectReferenceIndex.build()
+                : ProjectReferenceIndex.build(roots: projectFolders, maxDepth: 8)
             logger.debug("references: \(references.totalReferenceCount, privacy: .public) in \(String(format: "%.2f", Date().timeIntervalSince(start)), privacy: .public)s")
         } else {
             references = ProjectReferenceIndex()

@@ -52,6 +52,7 @@
 		F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFDF2F50A348005C6ACB /* DiskSpaceBar.swift */; };
 		F1FFAFE22F50ACB0005C6ACB /* PermissionRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */; };
 		FWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = PKG001 /* MacStorageCleanupCore */; };
+		PFP001 /* ProjectFoldersPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = PFPSRC001 /* ProjectFoldersPrompt.swift */; };
 		TESTBF001 /* CleanupProgressViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC001 /* CleanupProgressViewModelTests.swift */; };
 		TESTBF002 /* CleanupResultsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC002 /* CleanupResultsViewModelTests.swift */; };
 		TESTBF003 /* StorageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC003 /* StorageViewModelTests.swift */; };
@@ -82,6 +83,7 @@
 		F1FFAFDF2F50A348005C6ACB /* DiskSpaceBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceBar.swift; sourceTree = "<group>"; };
 		F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequestView.swift; sourceTree = "<group>"; };
 		INFO001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		PFPSRC001 /* ProjectFoldersPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFoldersPrompt.swift; sourceTree = "<group>"; };
 		PRODUCT001 /* MacStorageCleanupApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacStorageCleanupApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		SRC001 /* MacStorageCleanupApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacStorageCleanupApp.swift; sourceTree = "<group>"; };
 		SRC002 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
@@ -172,6 +174,7 @@
 		GROUP003 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				PFPSRC001 /* ProjectFoldersPrompt.swift */,
 				F15E17762F5329B3006A282A /* PreferencesView.swift */,
 				F15E17772F5329B3006A282A /* StatusMenuView.swift */,
 				F1FFAFE12F50ACB0005C6ACB /* PermissionRequestView.swift */,
@@ -350,6 +353,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				PFP001 /* ProjectFoldersPrompt.swift in Sources */,
 				APP001 /* MacStorageCleanupApp.swift in Sources */,
 				F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */,
 				F15E17782F5329B3006A282A /* PreferencesView.swift in Sources */,

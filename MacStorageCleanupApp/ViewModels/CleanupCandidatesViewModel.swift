@@ -145,10 +145,14 @@ class CleanupCandidatesViewModel: ObservableObject {
             if preferences.scanIncludeDeveloperCaches {
                 loadingMessage = "Scanning developer caches..."
                 loadingProgress = 0.7
-                // The per-project artifact scan only runs against roots the user chose.
-                coordinator.cacheManager.projectScanRoots = preferences
-                    .projectArtifactScanRoots
+                let folders = preferences.projectFolders
                     .map { URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath) }
+
+                // Reading version pins from the user's code is low-stakes, so it uses the
+                // folders directly. Offering that code's build output for deletion is not,
+                // so it stays behind its own switch.
+                coordinator.cacheManager.projectFolders = folders
+                coordinator.cacheManager.projectScanRoots = preferences.scanProjectBuildArtifacts ? folders : []
                 devResults = await coordinator.cacheManager.findDeveloperCaches()
             }
 

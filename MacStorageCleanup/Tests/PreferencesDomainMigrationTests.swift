@@ -44,14 +44,14 @@ final class PreferencesDomainMigrationTests: XCTestCase {
         var saved = UserPreferences.default
         saved.moveToTrashByDefault = false
         saved.oldFileThresholdDays = 180
-        saved.projectArtifactScanRoots = ["/Users/someone/Develop"]
+        saved.projectFolders = ["/Users/someone/Develop"]
         try seedLegacyDomain(with: saved, key: PreferencesStorageConstants.primaryKey)
 
         let loaded = try makeStore().load()
 
         XCTAssertFalse(loaded.moveToTrashByDefault)
         XCTAssertEqual(loaded.oldFileThresholdDays, 180)
-        XCTAssertEqual(loaded.projectArtifactScanRoots, ["/Users/someone/Develop"])
+        XCTAssertEqual(loaded.projectFolders, ["/Users/someone/Develop"])
     }
 
     /// Inherited once, then owned. The old domain belongs to a bundle that no longer runs,
@@ -109,6 +109,44 @@ final class PreferencesDomainMigrationTests: XCTestCase {
 
     func testAFreshInstallGetsDefaults() throws {
         XCTAssertEqual(try makeStore().load(), .default)
+    }
+
+    // MARK: - Project folders
+
+    /// Folders set before the rename existed only to drive the build artifact scan. They
+    /// carry forward with that scan still on and the prompt already answered: a user who
+    /// configured this once must not be asked again.
+    func testLegacyArtifactRootsBecomeProjectFolders() throws {
+        let legacy = Data(#"{"projectArtifactScanRoots":["/Users/someone/Develop"]}"#.utf8)
+
+        let decoded = try JSONDecoder().decode(UserPreferences.self, from: legacy)
+
+        XCTAssertEqual(decoded.projectFolders, ["/Users/someone/Develop"])
+        XCTAssertTrue(decoded.scanProjectBuildArtifacts)
+        XCTAssertTrue(decoded.hasPromptedForProjectFolders)
+    }
+
+    /// A fresh install has answered nothing, so it still gets asked — and until it does,
+    /// no part of the user's source tree is touched.
+    func testFreshInstallHasNotBeenPromptedAndScansNoProjects() throws {
+        let decoded = try JSONDecoder().decode(UserPreferences.self, from: Data("{}".utf8))
+
+        XCTAssertTrue(decoded.projectFolders.isEmpty)
+        XCTAssertFalse(decoded.hasPromptedForProjectFolders)
+        XCTAssertFalse(decoded.scanProjectBuildArtifacts)
+    }
+
+    /// Declining the prompt is a durable answer: no folders, but asked and answered.
+    func testDecliningThePromptSurvivesASaveLoadRound() throws {
+        var preferences = UserPreferences.default
+        preferences.hasPromptedForProjectFolders = true
+
+        let store = makeStore()
+        try store.save(preferences)
+
+        let loaded = try store.load()
+        XCTAssertTrue(loaded.hasPromptedForProjectFolders)
+        XCTAssertTrue(loaded.projectFolders.isEmpty)
     }
 
     /// Guards against the store reading its own domain as if it were the legacy one, which
