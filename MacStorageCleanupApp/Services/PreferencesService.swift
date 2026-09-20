@@ -101,6 +101,21 @@ class PreferencesService {
         set { updatePreference(\.scanIncludeAIAgentCaches, value: newValue) }
     }
 
+    var checkForUpdatesAutomatically: Bool {
+        get { loadPreferences().checkForUpdatesAutomatically }
+        set { updatePreference(\.checkForUpdatesAutomatically, value: newValue) }
+    }
+
+    var lastUpdateCheck: Date? {
+        get { loadPreferences().lastUpdateCheck }
+        set { updatePreference(\.lastUpdateCheck, value: newValue) }
+    }
+
+    var latestKnownVersion: String? {
+        get { loadPreferences().latestKnownVersion }
+        set { updatePreference(\.latestKnownVersion, value: newValue) }
+    }
+
     var projectFolders: [String] {
         get { loadPreferences().projectFolders }
         set { updatePreference(\.projectFolders, value: newValue) }

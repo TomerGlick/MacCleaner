@@ -5,6 +5,7 @@ struct MainWindowView: View {
     @StateObject private var viewModel = StorageViewModel()
     @State private var showingScanView = false
     @State private var showingPreferences = false
+    @StateObject private var updateService = UpdateCheckService.shared
     @State private var showingApplications = false
     @State private var showingBackups = false
     @State private var showingFileBrowser = false
@@ -68,6 +69,38 @@ struct MainWindowView: View {
                 
                 Divider()
 
+                // Shown only when there is actually a newer release, so the sidebar stays
+                // quiet the rest of the time.
+                if let update = updateService.availableUpdate {
+                    Button {
+                        NSWorkspace.shared.open(update.url)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .foregroundColor(.white)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Version \(update.version) available")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                Text("Open release page")
+                                    .font(.caption2)
+                                    .opacity(0.9)
+                            }
+                            Spacer()
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.accentColor)
+                        .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                    .help("A newer version is on GitHub. Opens the release page — the app never downloads or installs anything itself.")
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                }
+
                 // Settings button at bottom
                 Button(action: {
                     showingPreferences = true
@@ -110,6 +143,9 @@ struct MainWindowView: View {
         }
         .sheet(isPresented: $showingPreferences) {
             PreferencesWindow()
+        }
+        .task {
+            await updateService.checkIfDue()
         }
         .onChange(of: coordinator.globalErrors) { errors in
             if let firstError = errors.first {

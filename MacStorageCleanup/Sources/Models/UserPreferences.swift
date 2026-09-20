@@ -39,6 +39,16 @@ public struct UserPreferences: Codable, Equatable {
     public var scanIncludeDeveloperCaches: Bool
     /// Whether cleanup scans include AI coding agent caches.
     public var scanIncludeAIAgentCaches: Bool
+    /// Whether the app checks GitHub Releases for a newer version.
+    ///
+    /// This is the app's only outbound network request. On by default because a directly
+    /// distributed app has no other way to tell you a fix exists, and switchable off for
+    /// anyone who would rather it stayed entirely offline.
+    public var checkForUpdatesAutomatically: Bool
+    /// When the last check ran, so launching repeatedly does not hammer the API.
+    public var lastUpdateCheck: Date?
+    /// The newest version seen, so a known update survives a relaunch without a request.
+    public var latestKnownVersion: String?
     /// Folders where the user keeps source code.
     ///
     /// Used to find which toolchain versions a project pins, so an NDK or Gradle version
@@ -69,6 +79,9 @@ public struct UserPreferences: Codable, Equatable {
         debugMode: false,
         scanIncludeDeveloperCaches: true,
         scanIncludeAIAgentCaches: true,
+        checkForUpdatesAutomatically: true,
+        lastUpdateCheck: nil,
+        latestKnownVersion: nil,
         projectFolders: [],
         hasPromptedForProjectFolders: false,
         scanProjectBuildArtifacts: false
@@ -100,6 +113,9 @@ public struct UserPreferences: Codable, Equatable {
         debugMode: Bool = false,
         scanIncludeDeveloperCaches: Bool = true,
         scanIncludeAIAgentCaches: Bool = true,
+        checkForUpdatesAutomatically: Bool = true,
+        lastUpdateCheck: Date? = nil,
+        latestKnownVersion: String? = nil,
         projectFolders: [String] = [],
         hasPromptedForProjectFolders: Bool = false,
         scanProjectBuildArtifacts: Bool = false
@@ -116,6 +132,9 @@ public struct UserPreferences: Codable, Equatable {
         self.debugMode = debugMode
         self.scanIncludeDeveloperCaches = scanIncludeDeveloperCaches
         self.scanIncludeAIAgentCaches = scanIncludeAIAgentCaches
+        self.checkForUpdatesAutomatically = checkForUpdatesAutomatically
+        self.lastUpdateCheck = lastUpdateCheck
+        self.latestKnownVersion = latestKnownVersion
         self.projectFolders = projectFolders
         self.hasPromptedForProjectFolders = hasPromptedForProjectFolders
         self.scanProjectBuildArtifacts = scanProjectBuildArtifacts
@@ -134,6 +153,9 @@ public struct UserPreferences: Codable, Equatable {
         case debugMode
         case scanIncludeDeveloperCaches
         case scanIncludeAIAgentCaches
+        case checkForUpdatesAutomatically
+        case lastUpdateCheck
+        case latestKnownVersion
         case projectFolders
         case hasPromptedForProjectFolders
         case scanProjectBuildArtifacts
@@ -157,6 +179,9 @@ public struct UserPreferences: Codable, Equatable {
         try container.encode(debugMode, forKey: .debugMode)
         try container.encode(scanIncludeDeveloperCaches, forKey: .scanIncludeDeveloperCaches)
         try container.encode(scanIncludeAIAgentCaches, forKey: .scanIncludeAIAgentCaches)
+        try container.encode(checkForUpdatesAutomatically, forKey: .checkForUpdatesAutomatically)
+        try container.encodeIfPresent(lastUpdateCheck, forKey: .lastUpdateCheck)
+        try container.encodeIfPresent(latestKnownVersion, forKey: .latestKnownVersion)
         try container.encode(projectFolders, forKey: .projectFolders)
         try container.encode(hasPromptedForProjectFolders, forKey: .hasPromptedForProjectFolders)
         try container.encode(scanProjectBuildArtifacts, forKey: .scanProjectBuildArtifacts)
@@ -178,6 +203,10 @@ public struct UserPreferences: Codable, Equatable {
         debugMode = try container.decodeIfPresent(Bool.self, forKey: .debugMode) ?? defaults.debugMode
         scanIncludeDeveloperCaches = try container.decodeIfPresent(Bool.self, forKey: .scanIncludeDeveloperCaches) ?? defaults.scanIncludeDeveloperCaches
         scanIncludeAIAgentCaches = try container.decodeIfPresent(Bool.self, forKey: .scanIncludeAIAgentCaches) ?? defaults.scanIncludeAIAgentCaches
+        checkForUpdatesAutomatically = try container.decodeIfPresent(Bool.self, forKey: .checkForUpdatesAutomatically) ?? defaults.checkForUpdatesAutomatically
+        lastUpdateCheck = try container.decodeIfPresent(Date.self, forKey: .lastUpdateCheck)
+        latestKnownVersion = try container.decodeIfPresent(String.self, forKey: .latestKnownVersion)
+
         // Folders that were previously set only for the build artifact scan keep working,
         // and keep that scan enabled — the user had already opted into it.
         let legacyRoots = try container.decodeIfPresent([String].self, forKey: .projectArtifactScanRoots)

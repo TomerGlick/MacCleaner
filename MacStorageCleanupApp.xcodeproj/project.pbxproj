@@ -58,7 +58,9 @@
 		TESTBF003 /* StorageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC003 /* StorageViewModelTests.swift */; };
 		TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC004 /* CleanupCandidateRiskTests.swift */; };
 		TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */; };
+		TESTBF006 /* UpdateCheckServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC006 /* UpdateCheckServiceTests.swift */; };
 		TESTFWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = TESTPKG001 /* MacStorageCleanupCore */; };
+		UCS001 /* UpdateCheckService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UCSSRC001 /* UpdateCheckService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,6 +127,8 @@
 		TESTSRC003 /* StorageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageViewModelTests.swift; sourceTree = "<group>"; };
 		TESTSRC004 /* CleanupCandidateRiskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidateRiskTests.swift; sourceTree = "<group>"; };
 		TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidatesGroupSelectionTests.swift; sourceTree = "<group>"; };
+		TESTSRC006 /* UpdateCheckServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckServiceTests.swift; sourceTree = "<group>"; };
+		UCSSRC001 /* UpdateCheckService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -237,6 +241,7 @@
 				SRC031 /* LoggingService.swift */,
 				SRC032 /* PreferencesService.swift */,
 				SRC033 /* StorageAnalysisService.swift */,
+				UCSSRC001 /* UpdateCheckService.swift */,
 				SRC034 /* StorageInspectionService.swift */,
 			);
 			path = Services;
@@ -258,6 +263,7 @@
 				TESTSRC003 /* StorageViewModelTests.swift */,
 				TESTSRC004 /* CleanupCandidateRiskTests.swift */,
 				TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */,
+				TESTSRC006 /* UpdateCheckServiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -354,6 +360,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				PFP001 /* ProjectFoldersPrompt.swift in Sources */,
+				UCS001 /* UpdateCheckService.swift in Sources */,
 				APP001 /* MacStorageCleanupApp.swift in Sources */,
 				F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */,
 				F15E17782F5329B3006A282A /* PreferencesView.swift in Sources */,
@@ -409,6 +416,7 @@
 				TESTBF003 /* StorageViewModelTests.swift in Sources */,
 				TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */,
 				TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */,
+				TESTBF006 /* UpdateCheckServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -505,7 +513,7 @@
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
@@ -525,7 +533,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -608,7 +616,7 @@
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
@@ -628,7 +636,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -20,6 +20,7 @@ class PreferencesViewModel: ObservableObject {
     @Published var scanIncludeDeveloperCaches: Bool
     @Published var scanIncludeAIAgentCaches: Bool
     @Published var scanProjectBuildArtifacts: Bool
+    @Published var checkForUpdatesAutomatically: Bool
     /// Folders the per-project build artifact scan may look at. Empty disables that scan.
     @Published var projectFolders: [String]
     
@@ -49,6 +50,7 @@ class PreferencesViewModel: ObservableObject {
         self.scanIncludeDeveloperCaches = loadedPreferences.scanIncludeDeveloperCaches
         self.scanIncludeAIAgentCaches = loadedPreferences.scanIncludeAIAgentCaches
         self.scanProjectBuildArtifacts = loadedPreferences.scanProjectBuildArtifacts
+        self.checkForUpdatesAutomatically = loadedPreferences.checkForUpdatesAutomatically
         self.projectFolders = loadedPreferences.projectFolders
         self.oldFileThresholdDays = loadedPreferences.oldFileThresholdDays
         self.largeFileSizeThresholdMB = loadedPreferences.largeFileSizeThresholdMB
@@ -67,6 +69,7 @@ class PreferencesViewModel: ObservableObject {
         preferences.scanIncludeDeveloperCaches = scanIncludeDeveloperCaches
         preferences.scanIncludeAIAgentCaches = scanIncludeAIAgentCaches
         preferences.scanProjectBuildArtifacts = scanProjectBuildArtifacts
+        preferences.checkForUpdatesAutomatically = checkForUpdatesAutomatically
         preferences.projectFolders = projectFolders
         preferences.oldFileThresholdDays = clampedOldFileThreshold
         preferences.largeFileSizeThresholdMB = largeFileSizeThresholdMB
@@ -105,6 +108,7 @@ class PreferencesViewModel: ObservableObject {
         scanIncludeDeveloperCaches = preferences.scanIncludeDeveloperCaches
         scanIncludeAIAgentCaches = preferences.scanIncludeAIAgentCaches
         scanProjectBuildArtifacts = preferences.scanProjectBuildArtifacts
+        checkForUpdatesAutomatically = preferences.checkForUpdatesAutomatically
         projectFolders = preferences.projectFolders
         oldFileThresholdDays = preferences.oldFileThresholdDays
         largeFileSizeThresholdMB = preferences.largeFileSizeThresholdMB

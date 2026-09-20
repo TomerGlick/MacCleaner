@@ -4,6 +4,7 @@ import MacStorageCleanupCore
 /// Preferences window for configuring application settings
 struct PreferencesWindow: View {
     @StateObject private var viewModel = PreferencesViewModel()
+    @StateObject private var updateService = UpdateCheckService.shared
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -406,6 +407,35 @@ struct PreferencesWindow: View {
                     bulletPoint("Find and manage large files")
                     bulletPoint("Scheduled automatic cleanup")
                     bulletPoint("Safe file deletion with backup support")
+                }
+            }
+            .frame(maxWidth: 400)
+
+            Divider()
+                .frame(maxWidth: 400)
+
+            VStack(spacing: 8) {
+                Toggle("Check for updates automatically", isOn: $viewModel.checkForUpdatesAutomatically)
+
+                Text("Checks GitHub Releases once a day. This is the app's only network request, and it never downloads or installs anything on its own.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 8) {
+                    Button("Check Now") {
+                        Task { await updateService.check() }
+                    }
+                    .disabled(updateService.isChecking)
+
+                    if updateService.isChecking {
+                        ProgressView().controlSize(.small)
+                    } else if let update = updateService.availableUpdate {
+                        Button("Version \(update.version) available") {
+                            NSWorkspace.shared.open(update.url)
+                        }
+                        .buttonStyle(.link)
+                    }
                 }
             }
             .frame(maxWidth: 400)
