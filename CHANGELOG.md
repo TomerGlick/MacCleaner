@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-09-20
+
+### Added
+- The app asks once where you keep your projects, rather than guessing at conventional
+  folder names. Folders you name are searched deeper, so a toolchain version pinned by a
+  project in an unusual location is still protected. Declining is remembered and falls
+  back to the previous guess
+- Shortcut to the project folders setting in the cleanup page, which doubles as status:
+  it reads "Guessing project folders" until answered
+- Rescan button (⌘R) in the cleanup page — sizes and pins go stale as soon as a build runs
+- Update notice: the app checks GitHub Releases once a day and shows a badge above the
+  Settings button when a newer version exists. It links to the release page and never
+  downloads or installs anything. Switchable off in Preferences › About
+
+### Changed
+- Cleanup is now the first item in the sidebar and the tab the app opens on
+- `projectArtifactScanRoots` becomes `projectFolders`, with build artifact scanning split
+  into its own switch: naming folders so the app can read version pins is a much smaller
+  ask than letting it offer that project's build output for deletion. Existing settings
+  migrate with the artifact scan still enabled
+
+### Fixed
+- The cleanup progress sheet clipped its own title and Cancel button: its content's
+  minimum height came to just over the fixed 400pt it was given
+- The preferences window's tab bar clipped against the top edge when opened from the main
+  window, because a TabView gets no inset of its own inside a sheet
+- A prerelease tag such as `1.4.0-beta.1` parsed as version 1.4.0.1 and would have been
+  offered as an upgrade over the 1.4.0 release it precedes
+
+### Note
+- Update checking is the app's only outbound network request. It sends nothing but the
+  request itself and reads a version number
+
 ## [1.4.0] - 2026-09-20
 
 ### Changed

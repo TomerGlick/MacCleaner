@@ -104,20 +104,27 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 
 ## 📸 Screenshots
 
+### Main Window
+Opens on Cleanup — reclaiming space is what the app is for.
+
+![Main Window](screenshots/main-window.png)
+
+### Cleanup Candidates
+Grouped by tool, with a risk indicator on every row and heading, per-group selection,
+and a shortcut to the project folders that decide which versions are protected.
+
+![Cleanup Candidates](screenshots/cleanup-candidates.png)
+
+### Scanning
+![Scanning](screenshots/scanning.png)
+
 ### Menu Bar System Monitor
 ![Menu Bar Stats](screenshots/menu-bar-stats.png)
 *Real-time system monitoring accessible from your menu bar*
 
-### Main Window - Storage Analysis
-![Storage Analysis](screenshots/main-window.png)
+### Storage Analysis
+![Storage Analysis](screenshots/storage-analysis.png)
 
-### Cleanup Candidates
-Grouped by tool, with risk dots, per-group selection and per-group totals.
-
-![Cleanup Candidates](screenshots/cleanup-candidates.png)
-
-### Cleanup in Progress
-![Cleanup Progress](screenshots/cleanup-progress.png)
 
 ## 🚀 Installation
 

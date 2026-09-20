@@ -4,9 +4,10 @@ This directory contains screenshots for the Mac Storage Cleanup application.
 
 ## Current Screenshots
 
-- `main-window.png` - Main storage analysis window
 - `cleanup-candidates.png` - Cleanup candidates, grouped by tool with risk indicators
-- `cleanup-progress.png` - Cleanup in progress
+- `scanning.png` - A scan in progress
+- `main-window.png` - Main window on launch, showing the Cleanup page
+- `storage-analysis.png` - Storage breakdown with the category chart
 - `menu-bar-stats.png` - Menu bar system monitor popover
 
 ## How to Add Menu Bar Screenshot
