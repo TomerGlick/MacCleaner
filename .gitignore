@@ -114,3 +114,14 @@ iOSInjectionProject/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Local release tooling
+#
+# Kept on the maintainer's machine and deliberately not published: they carry
+# release mechanics and notes that are not useful to a visitor, but are needed
+# locally to cut a version. Previously these were hidden by a *global* gitignore,
+# which silently applied to every repository on that machine — the rule belongs
+# here, with the project it concerns.
+create_release.sh
+RELEASE_GUIDE.md
+MENU_BAR_FEATURE.md
