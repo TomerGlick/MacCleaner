@@ -126,6 +126,11 @@ class PreferencesService {
         set { updatePreference(\.hasPromptedForProjectFolders, value: newValue) }
     }
 
+    var hasPromptedForMemoryHelper: Bool {
+        get { loadPreferences().hasPromptedForMemoryHelper }
+        set { updatePreference(\.hasPromptedForMemoryHelper, value: newValue) }
+    }
+
     var scanProjectBuildArtifacts: Bool {
         get { loadPreferences().scanProjectBuildArtifacts }
         set { updatePreference(\.scanProjectBuildArtifacts, value: newValue) }
