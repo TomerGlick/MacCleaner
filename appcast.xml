@@ -3,6 +3,26 @@
     <channel>
         <title>Mac Storage Cleanup</title>
         <item>
+            <title>1.7.1</title>
+            <pubDate>Mon, 21 Sep 2026 15:15:32 +0300</pubDate>
+            <link>https://github.com/TomerGlick/MacCleaner</link>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>1.7.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[
+### Fixed
+- Quitting the app no longer takes the menu bar icon with it. Cmd+Q now closes the
+  windows and hides the Dock icon while the menu bar session keeps running; the Quit
+  button in the popover is the one way to exit for good. With the menu bar icon turned
+  off in Preferences, quitting works as before
+- Reopening the main window after closing it did nothing — the app's own "New Window"
+  command never opened a window and hid the one that does
+- Clicking the Dock icon with no window open could produce two windows instead of one
+
+]]></description>
+            <enclosure url="https://github.com/TomerGlick/MacCleaner/releases/download/1.7.1/MacCleaner-v1.7.1.dmg" length="4086529" type="application/octet-stream" sparkle:edSignature="LG+dDqJfL1W3UWcFSM15hGeKWfMpPW4djVpCg1tdzowbZ+XNaewnYvcZoy3r1Yh6gyvWG7lHkNWwmJ3Id9eJAA=="/>
+        </item>
+        <item>
             <title>1.7.0</title>
             <pubDate>Mon, 21 Sep 2026 14:58:00 +0300</pubDate>
             <link>https://github.com/TomerGlick/MacCleaner</link>
