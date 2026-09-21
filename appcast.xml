@@ -1,0 +1,29 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Mac Storage Cleanup</title>
+        <item>
+            <title>1.7.0</title>
+            <pubDate>Mon, 21 Sep 2026 14:58:00 +0300</pubDate>
+            <link>https://github.com/TomerGlick/MacCleaner</link>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.7.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[
+### Added
+- Automatic updates through Sparkle: the app checks hourly, downloads a new release in
+  the background and installs it after you approve, instead of sending you to a download
+  page. Updates carry an EdDSA signature checked against a key baked into the app, so a
+  GitHub release alone cannot push code
+- Update checks now run from launch, including menu bar sessions that never open a window
+
+### Changed
+- The homegrown GitHub Releases check is replaced by Sparkle's feed (`appcast.xml`).
+  Users on 1.6.0 or older still have to download the next release by hand — automatic
+  updates only work from this version forward
+
+]]></description>
+            <enclosure url="https://github.com/TomerGlick/MacCleaner/releases/download/1.7.0/MacCleaner-v1.7.0.dmg" length="4088356" type="application/octet-stream" sparkle:edSignature="NX115z1RhoW8tgsUKWL/PTm2N2F3FmfZnGV8yy59ivQTJvhfGMJ/MO4wBU5Nx/NaHOr+4dsFcYUQ1ThNlTiYBg=="/>
+        </item>
+    </channel>
+</rss>
