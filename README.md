@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS-blue.svg" alt="Platform">
   <img src="https://img.shields.io/badge/swift-5.9-orange.svg" alt="Swift">
-  <img src="https://img.shields.io/badge/license-BSD--3--Clause-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-green.svg" alt="License">
 </p>
 
 A powerful, native macOS application to clean up your Mac and free up storage space. Built with SwiftUI and designed with safety and user control in mind.
@@ -332,7 +332,23 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
+Copyright (C) 2026 Tomer Glick
+
+This program is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the [GNU General Public License](LICENSE) for more details.
+
+If you distribute this program, or a modified version of it, you must pass on the
+same freedoms: ship the source, keep it under GPL-3.0, and state your changes.
+
+## 🔐 Security
+
+Found a vulnerability? Please do not open a public issue — see [SECURITY.md](SECURITY.md)
+for how to report it privately.
 
 ## 🙏 Acknowledgments
 
