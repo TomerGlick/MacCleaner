@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.7.2] - 2026-09-21
 
+### Added
+- "Check for Updates…" in the app menu, next to About, where people look for it. The
+  same check already sat in Preferences › About and behind the sidebar's update badge
+
 ### Fixed
 - Installing an update did nothing. 1.7.1 kept the app alive through any quit so the
   menu bar icon would survive, and Sparkle installs an update by asking the app to

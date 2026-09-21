@@ -106,6 +106,12 @@ struct MacStorageCleanupApp: App {
                 Button("About Mac Storage Cleanup") {
                     NSApp.orderFrontStandardAboutPanel()
                 }
+
+                // Where people look for it. The same action also sits in
+                // Preferences › About and behind the sidebar's update badge.
+                Button("Check for Updates…") {
+                    AppUpdaterService.shared.checkForUpdates()
+                }
             }
             
             // The default WindowGroup "New Window" item is left in place: it is the
