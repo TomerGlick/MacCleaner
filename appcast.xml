@@ -3,6 +3,26 @@
     <channel>
         <title>Mac Storage Cleanup</title>
         <item>
+            <title>1.7.2</title>
+            <pubDate>Mon, 21 Sep 2026 17:30:00 +0300</pubDate>
+            <link>https://github.com/TomerGlick/MacCleaner</link>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.7.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[
+### Added
+- "Check for Updates…" in the app menu, next to About, where people look for it. The
+  same check already sat in Preferences › About and behind the sidebar's update badge
+
+### Fixed
+- Installing an update did nothing. 1.7.1 kept the app alive through any quit so the
+  menu bar icon would survive, and Sparkle installs an update by asking the app to
+  quit — so "Install and Relaunch" sat there. Updates now quit the app as they should
+
+]]></description>
+            <enclosure url="https://github.com/TomerGlick/MacCleaner/releases/download/1.7.2/MacCleaner-v1.7.2.dmg" length="4088366" type="application/octet-stream" sparkle:edSignature="xkp61MhPpmKwJChOTV6D80Lwd5AYxWxcrhQmDn7KtyQxLp2S2URSL6DKA/HFJ03WKqG0bCmMAttwKWuT590bAg=="/>
+        </item>
+        <item>
             <title>1.7.1</title>
             <pubDate>Mon, 21 Sep 2026 15:15:32 +0300</pubDate>
             <link>https://github.com/TomerGlick/MacCleaner</link>
