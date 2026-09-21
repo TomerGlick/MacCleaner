@@ -92,10 +92,11 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
   - Battery: Level, charging status, and health percentage
   - Uptime: System runtime since last restart
   - Network: Real-time upload/download speeds
-- **Quick Actions** - Launch cleanup directly from menu bar
+- **Quick Actions** - Launch cleanup directly from menu bar, including Free RAM
 - **Auto-refresh** - Stats update every 2 seconds
 
 ### ⚙️ Advanced Features
+- **Automatic Updates** - Checks for a new release, downloads it in the background and installs it once you approve. Every update is signed with a key separate from the app's certificate, and this is the app's only network request
 - **Scheduled Cleanup** - Automatic cleanup on daily, weekly, or monthly basis
 - **Customizable Thresholds** - Set your own definitions for "large" and "old" files; thresholds are read from preferences by both the scanner and the analyzer
 - **Selective Cleanup** - Choose exactly what to clean

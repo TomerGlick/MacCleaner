@@ -4,7 +4,7 @@ import MacStorageCleanupCore
 /// Preferences window for configuring application settings
 struct PreferencesWindow: View {
     @StateObject private var viewModel = PreferencesViewModel()
-    @StateObject private var updateService = UpdateCheckService.shared
+    @StateObject private var updateService = AppUpdaterService.shared
     @StateObject private var helperService = PrivilegedHelperService.shared
     @State private var helperMessage: String?
     @Environment(\.dismiss) private var dismiss
@@ -483,25 +483,25 @@ struct PreferencesWindow: View {
 
             VStack(spacing: 8) {
                 Toggle("Check for updates automatically", isOn: $viewModel.checkForUpdatesAutomatically)
+                    .onChange(of: viewModel.checkForUpdatesAutomatically) { enabled in
+                        updateService.setAutomaticChecks(enabled)
+                    }
 
-                Text("Checks GitHub Releases once a day. This is the app's only network request, and it never downloads or installs anything on its own.")
+                Text("Checks hourly for a new release, downloads it in the background and asks before installing. Updates are signed with a key that is separate from the app's certificate, and this is the app's only network request.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
 
                 HStack(spacing: 8) {
                     Button("Check Now") {
-                        Task { await updateService.check() }
+                        updateService.checkForUpdates()
                     }
-                    .disabled(updateService.isChecking)
+                    .disabled(!updateService.canCheckForUpdates)
 
-                    if updateService.isChecking {
-                        ProgressView().controlSize(.small)
-                    } else if let update = updateService.availableUpdate {
-                        Button("Version \(update.version) available") {
-                            NSWorkspace.shared.open(update.url)
-                        }
-                        .buttonStyle(.link)
+                    if let update = updateService.availableUpdate {
+                        Text("Version \(update.displayVersionString) ready")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
             }

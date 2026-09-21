@@ -134,6 +134,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Start system monitoring
         SystemStatsService.shared.startMonitoring()
         
+        // Sparkle schedules its own checks from launch, including menu bar sessions that
+        // never open a window. Touching the service here is what starts it.
+        _ = AppUpdaterService.shared
+        
         // Offer the memory helper once, after the first launch has settled.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             PrivilegedHelperService.shared.presentFirstRunOfferIfNeeded()

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Automatic updates through Sparkle: the app checks hourly, downloads a new release in
+  the background and installs it after you approve, instead of sending you to a download
+  page. Updates carry an EdDSA signature checked against a key baked into the app, so a
+  GitHub release alone cannot push code
+- Update checks now run from launch, including menu bar sessions that never open a window
+
+### Changed
+- The homegrown GitHub Releases check is replaced by Sparkle's feed (`appcast.xml`).
+  Users on 1.6.0 or older still have to download the next release by hand — automatic
+  updates only work from this version forward
+
 ## [1.6.0] - 2026-09-21
 
 ### Added

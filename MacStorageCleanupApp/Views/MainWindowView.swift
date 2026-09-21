@@ -5,7 +5,7 @@ struct MainWindowView: View {
     @StateObject private var viewModel = StorageViewModel()
     @State private var showingScanView = false
     @State private var showingPreferences = false
-    @StateObject private var updateService = UpdateCheckService.shared
+    @StateObject private var updateService = AppUpdaterService.shared
     @State private var showingApplications = false
     @State private var showingBackups = false
     @State private var showingFileBrowser = false
@@ -73,16 +73,16 @@ struct MainWindowView: View {
                 // quiet the rest of the time.
                 if let update = updateService.availableUpdate {
                     Button {
-                        NSWorkspace.shared.open(update.url)
+                        updateService.checkForUpdates()
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "arrow.down.circle.fill")
                                 .foregroundColor(.white)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text("Version \(update.version) available")
+                                Text("Version \(update.displayVersionString) available")
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                Text("Open release page")
+                                Text("Install update")
                                     .font(.caption2)
                                     .opacity(0.9)
                             }
@@ -96,7 +96,7 @@ struct MainWindowView: View {
                         .cornerRadius(8)
                     }
                     .buttonStyle(.plain)
-                    .help("A newer version is on GitHub. Opens the release page — the app never downloads or installs anything itself.")
+                    .help("A newer version is ready. Shows what changed, then installs it and relaunches.")
                     .padding(.horizontal)
                     .padding(.top, 8)
                 }
@@ -143,9 +143,6 @@ struct MainWindowView: View {
         }
         .sheet(isPresented: $showingPreferences) {
             PreferencesWindow()
-        }
-        .task {
-            await updateService.checkIfDue()
         }
         .onChange(of: coordinator.globalErrors) { errors in
             if let firstError = errors.first {

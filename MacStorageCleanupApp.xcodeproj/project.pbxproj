@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		SPARKLE003 /* AppUpdaterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SPARKLE004 /* AppUpdaterService.swift */; };
+		SPARKLE002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SPARKLE001 /* Sparkle */; };
 		HBUILD001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC001 /* main.swift */; };
 		HBUILD002 /* PrivilegedHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC002 /* PrivilegedHelperProtocol.swift */; };
 		HBUILD003 /* PrivilegedHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC002 /* PrivilegedHelperProtocol.swift */; };
@@ -65,9 +67,7 @@
 		TESTBF003 /* StorageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC003 /* StorageViewModelTests.swift */; };
 		TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC004 /* CleanupCandidateRiskTests.swift */; };
 		TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */; };
-		TESTBF006 /* UpdateCheckServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC006 /* UpdateCheckServiceTests.swift */; };
 		TESTFWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = TESTPKG001 /* MacStorageCleanupCore */; };
-		UCS001 /* UpdateCheckService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UCSSRC001 /* UpdateCheckService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +113,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		SPARKLE004 /* AppUpdaterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdaterService.swift; sourceTree = "<group>"; };
 		HSRC001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		HSRC002 /* PrivilegedHelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegedHelperProtocol.swift; sourceTree = "<group>"; };
 		HSRC003 /* PrivilegedHelperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegedHelperService.swift; sourceTree = "<group>"; };
@@ -173,8 +174,6 @@
 		TESTSRC003 /* StorageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageViewModelTests.swift; sourceTree = "<group>"; };
 		TESTSRC004 /* CleanupCandidateRiskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidateRiskTests.swift; sourceTree = "<group>"; };
 		TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidatesGroupSelectionTests.swift; sourceTree = "<group>"; };
-		TESTSRC006 /* UpdateCheckServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckServiceTests.swift; sourceTree = "<group>"; };
-		UCSSRC001 /* UpdateCheckService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +181,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				SPARKLE002 /* Sparkle in Frameworks */,
 				FWK001 /* MacStorageCleanupCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -307,9 +307,9 @@
 				SRC031 /* LoggingService.swift */,
 				SRC032 /* PreferencesService.swift */,
 				SRC033 /* StorageAnalysisService.swift */,
-				UCSSRC001 /* UpdateCheckService.swift */,
 				SRC034 /* StorageInspectionService.swift */,
 				HSRC003 /* PrivilegedHelperService.swift */,
+				SPARKLE004 /* AppUpdaterService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -332,7 +332,6 @@
 				TESTSRC003 /* StorageViewModelTests.swift */,
 				TESTSRC004 /* CleanupCandidateRiskTests.swift */,
 				TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */,
-				TESTSRC006 /* UpdateCheckServiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -373,6 +372,7 @@
 			name = MacStorageCleanupApp;
 			packageProductDependencies = (
 				PKG001 /* MacStorageCleanupCore */,
+				SPARKLE001 /* Sparkle */,
 			);
 			productName = MacStorageCleanupApp;
 			productReference = PRODUCT001 /* MacStorageCleanupApp.app */;
@@ -419,6 +419,7 @@
 			mainGroup = ROOT;
 			packageReferences = (
 				PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */,
+				SPARKLEPKG001 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			productRefGroup = GROUP002 /* Products */;
 			projectDirPath = "";
@@ -457,7 +458,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				PFP001 /* ProjectFoldersPrompt.swift in Sources */,
-				UCS001 /* UpdateCheckService.swift in Sources */,
 				APP001 /* MacStorageCleanupApp.swift in Sources */,
 				F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */,
 				F15E17782F5329B3006A282A /* PreferencesView.swift in Sources */,
@@ -474,6 +474,7 @@
 				F15E19012F5329C9006A282A /* MemoryCleanupService.swift in Sources */,
 				HBUILD003 /* PrivilegedHelperProtocol.swift in Sources */,
 				HBUILD004 /* PrivilegedHelperService.swift in Sources */,
+				SPARKLE003 /* AppUpdaterService.swift in Sources */,
 				F15E177D2F5329C9006A282A /* MenuBarManager.swift in Sources */,
 				APP010 /* ScanView.swift in Sources */,
 				APP011 /* CleanupCandidateData.swift in Sources */,
@@ -516,7 +517,6 @@
 				TESTBF003 /* StorageViewModelTests.swift in Sources */,
 				TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */,
 				TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */,
-				TESTBF006 /* UpdateCheckServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -890,7 +890,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		SPARKLEPKG001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		SPARKLE001 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SPARKLEPKG001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		PKG001 /* MacStorageCleanupCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = PKGREF001 /* XCLocalSwiftPackageReference "MacStorageCleanup" */;
