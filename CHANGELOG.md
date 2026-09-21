@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-09-21
+
+### Fixed
+- Quitting the app no longer takes the menu bar icon with it. Cmd+Q now closes the
+  windows and hides the Dock icon while the menu bar session keeps running; the Quit
+  button in the popover is the one way to exit for good. With the menu bar icon turned
+  off in Preferences, quitting works as before
+- Reopening the main window after closing it did nothing — the app's own "New Window"
+  command never opened a window and hid the one that does
+- Clicking the Dock icon with no window open could produce two windows instead of one
+
 ## [1.7.0] - 2026-09-21
 
 ### Added
