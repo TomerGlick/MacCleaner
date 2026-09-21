@@ -156,7 +156,7 @@ struct StatusMenuView: View {
         MenuBarManager.shared.togglePopover()
         // The only path that really tears the process down; Cmd+Q just hides
         // the windows and leaves the menu bar session running.
-        AppDelegate.isPerformingFullQuit = true
+        AppDelegate.allowsTermination = true
         NSApp.terminate(nil)
     }
 

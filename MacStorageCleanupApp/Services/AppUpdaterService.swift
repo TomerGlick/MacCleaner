@@ -51,6 +51,17 @@ final class AppUpdaterService: NSObject, ObservableObject {
 }
 
 extension AppUpdaterService: SPUUpdaterDelegate {
+    /// Sparkle installs an update by terminating the app, so the menu bar session's
+    /// hold on termination has to be released first — otherwise "Install and Relaunch"
+    /// looks dead. Set synchronously: Sparkle terminates right after these return.
+    nonisolated func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
+        MainActor.assumeIsolated { AppDelegate.allowsTermination = true }
+    }
+
+    nonisolated func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
+        MainActor.assumeIsolated { AppDelegate.allowsTermination = true }
+    }
+
     nonisolated func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
         Task { @MainActor in self.availableUpdate = item }
     }
