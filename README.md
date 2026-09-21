@@ -4,6 +4,7 @@
   <img src="https://img.shields.io/badge/platform-macOS-blue.svg" alt="Platform">
   <img src="https://img.shields.io/badge/swift-5.9-orange.svg" alt="Swift">
   <img src="https://img.shields.io/badge/license-GPL--3.0-green.svg" alt="License">
+  <a href="https://buymeacoffee.com/tomerglick"><img src="https://img.shields.io/badge/buy%20me%20a%20coffee-support-yellow.svg" alt="Buy Me a Coffee"></a>
 </p>
 
 A powerful, native macOS application to clean up your Mac and free up storage space. Built with SwiftUI and designed with safety and user control in mind.
@@ -351,6 +352,11 @@ same freedoms: ship the source, keep it under GPL-3.0, and state your changes.
 Found a vulnerability? Please do not open a public issue — see [SECURITY.md](SECURITY.md)
 for how to report it privately.
 
+## ☕ Support
+
+The app is free and GPL-3.0, and it stays that way. If it saved you some disk space and
+you feel like it, you can [buy me a coffee](https://buymeacoffee.com/tomerglick).
+
 ## 🙏 Acknowledgments
 
 - Built with SwiftUI and modern macOS APIs
@@ -359,7 +365,7 @@ for how to report it privately.
 
 ## 📧 Contact
 
-- GitHub Issues: [Report a bug or request a feature](https://github.com/yourusername/MacCleaner/issues)
+- GitHub Issues: [Report a bug or request a feature](https://github.com/TomerGlick/MacCleaner/issues)
 
 ## 🗺️ Roadmap
 
