@@ -7,6 +7,10 @@ class MenuBarManager: NSObject {
     
     static let shared = MenuBarManager()
     
+    /// True while the status item is installed, i.e. the app still has a menu bar
+    /// session to fall back on when the last window closes.
+    var isActive: Bool { statusItem != nil }
+    
     private override init() {
         super.init()
     }
@@ -59,5 +63,11 @@ class MenuBarManager: NSObject {
         }
         statusItem = nil
         popover = nil
+
+        // Without a status item there is nothing left to click, so the app has to
+        // come back as a regular Dock app instead of staying invisible.
+        if NSApp.activationPolicy() != .regular {
+            NSApp.setActivationPolicy(.regular)
+        }
     }
 }

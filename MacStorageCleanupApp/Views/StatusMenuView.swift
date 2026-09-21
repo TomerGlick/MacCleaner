@@ -154,6 +154,9 @@ struct StatusMenuView: View {
 
     private func quitApp() {
         MenuBarManager.shared.togglePopover()
+        // The only path that really tears the process down; Cmd+Q just hides
+        // the windows and leaves the menu bar session running.
+        AppDelegate.isPerformingFullQuit = true
         NSApp.terminate(nil)
     }
 
@@ -161,22 +164,9 @@ struct StatusMenuView: View {
         // Close the popover first
         MenuBarManager.shared.togglePopover()
         
-        // Activate the app
-        NSApp.activate(ignoringOtherApps: true)
-        
-        // Find or create main window
-        let windows = NSApp.windows.filter { window in
-            // Look for the main content window (not popover or other utility windows)
-            return window.isVisible || window.canBecomeMain
-        }
-        
-        if let mainWindow = windows.first {
-            mainWindow.makeKeyAndOrderFront(nil)
-        } else {
-            // If no window exists, try to create one by sending a notification
-            // This will be handled by the app delegate or main window
-            NotificationCenter.default.post(name: NSNotification.Name("ShowMainWindow"), object: nil)
-        }
+        // The app delegate owns window restoration: it leaves menu bar only mode,
+        // brings back windows parked by a Cmd+Q, and creates one if none exist.
+        NotificationCenter.default.post(name: NSNotification.Name("ShowMainWindow"), object: nil)
     }
 }
 
