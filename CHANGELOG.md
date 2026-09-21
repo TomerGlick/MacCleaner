@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.6.0] - 2026-09-21
 
 ### Added
 - Free RAM: the menu bar popover can flush inactive and cached memory with the system
@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   be removed from Preferences or System Settings › General › Login Items. The app offers
   it once on first launch; "Not now" is remembered and Free RAM falls back to asking for
   a password per use
+
+### Changed
+- The project is now licensed under GPL-3.0, replacing BSD 3-Clause. Anyone distributing
+  a modified version has to pass on the same freedoms
+- Security reports move out of the README into SECURITY.md, which points at GitHub's
+  private advisories
 
 ## [1.5.0] - 2026-09-20
 
