@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		HBUILD001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC001 /* main.swift */; };
+		HBUILD002 /* PrivilegedHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC002 /* PrivilegedHelperProtocol.swift */; };
+		HBUILD003 /* PrivilegedHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC002 /* PrivilegedHelperProtocol.swift */; };
+		HBUILD004 /* PrivilegedHelperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = HSRC003 /* PrivilegedHelperService.swift */; };
+		HBUILD005 /* MacCleanerHelper in CopyFiles */ = {isa = PBXBuildFile; fileRef = HPRODUCT001 /* MacCleanerHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		HBUILD006 /* com.tomerglick.MacStorageCleanup.helper.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = HPLIST002 /* com.tomerglick.MacStorageCleanup.helper.plist */; };
 		APP001 /* MacStorageCleanupApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* MacStorageCleanupApp.swift */; };
 		APP002 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* MainWindowView.swift */; };
 		APP003 /* StorageHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* StorageHeaderView.swift */; };
@@ -44,6 +50,7 @@
 		F15E17782F5329B3006A282A /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15E17762F5329B3006A282A /* PreferencesView.swift */; };
 		F15E17792F5329B3006A282A /* StatusMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15E17772F5329B3006A282A /* StatusMenuView.swift */; };
 		F15E177C2F5329C9006A282A /* SystemStatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15E177B2F5329C9006A282A /* SystemStatsService.swift */; };
+		F15E19012F5329C9006A282A /* MemoryCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15E19022F5329C9006A282A /* MemoryCleanupService.swift */; };
 		F15E177D2F5329C9006A282A /* MenuBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15E177A2F5329C9006A282A /* MenuBarManager.swift */; };
 		F1FFAFD82F4A29A8005C6ACB /* FileBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */; };
 		F1FFAFDA2F4A29B7005C6ACB /* FileBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */; };
@@ -64,6 +71,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		HPROXY001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = PROJECT001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = HTARGET001;
+			remoteInfo = MacCleanerHelper;
+		};
 		TESTPROXY001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = PROJECT001 /* Project object */;
@@ -73,11 +87,43 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		HCOPY001 /* Embed Privileged Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				HBUILD005 /* MacCleanerHelper in CopyFiles */,
+			);
+			name = "Embed Privileged Helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		HCOPY002 /* Copy Launch Daemon Property List */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "Contents/Library/LaunchDaemons";
+			dstSubfolderSpec = 1;
+			files = (
+				HBUILD006 /* com.tomerglick.MacStorageCleanup.helper.plist in CopyFiles */,
+			);
+			name = "Copy Launch Daemon Property List";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		HSRC001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		HSRC002 /* PrivilegedHelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegedHelperProtocol.swift; sourceTree = "<group>"; };
+		HSRC003 /* PrivilegedHelperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegedHelperService.swift; sourceTree = "<group>"; };
+		HPLIST001 /* Helper-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Helper-Info.plist"; sourceTree = "<group>"; };
+		HPLIST002 /* com.tomerglick.MacStorageCleanup.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.tomerglick.MacStorageCleanup.helper.plist; sourceTree = "<group>"; };
+		HPRODUCT001 /* MacCleanerHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MacCleanerHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 		F15E17762F5329B3006A282A /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
 		F15E17772F5329B3006A282A /* StatusMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuView.swift; sourceTree = "<group>"; };
 		F15E177A2F5329C9006A282A /* MenuBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarManager.swift; sourceTree = "<group>"; };
 		F15E177B2F5329C9006A282A /* SystemStatsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemStatsService.swift; sourceTree = "<group>"; };
+		F15E19022F5329C9006A282A /* MemoryCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryCleanupService.swift; sourceTree = "<group>"; };
 		F1FFAFD72F4A29A8005C6ACB /* FileBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserViewModel.swift; sourceTree = "<group>"; };
 		F1FFAFD92F4A29B7005C6ACB /* FileBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBrowserView.swift; sourceTree = "<group>"; };
 		F1FFAFDB2F500F97005C6ACB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -151,6 +197,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		HGROUP001 /* MacCleanerHelper */ = {
+			isa = PBXGroup;
+			children = (
+				HSRC001 /* main.swift */,
+				HPLIST001 /* Helper-Info.plist */,
+				HPLIST002 /* com.tomerglick.MacStorageCleanup.helper.plist */,
+			);
+			path = MacCleanerHelper;
+			sourceTree = "<group>";
+		};
+		HGROUP002 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				HSRC002 /* PrivilegedHelperProtocol.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		GROUP001 /* MacStorageCleanupApp */ = {
 			isa = PBXGroup;
 			children = (
@@ -170,6 +234,7 @@
 			isa = PBXGroup;
 			children = (
 				PRODUCT001 /* MacStorageCleanupApp.app */,
+				HPRODUCT001 /* MacCleanerHelper */,
 				TESTPRODUCT001 /* MacStorageCleanupAppTests.xctest */,
 			);
 			name = Products;
@@ -236,6 +301,7 @@
 			children = (
 				F15E177A2F5329C9006A282A /* MenuBarManager.swift */,
 				F15E177B2F5329C9006A282A /* SystemStatsService.swift */,
+				F15E19022F5329C9006A282A /* MemoryCleanupService.swift */,
 				SRC029 /* ApplicationCoordinator.swift */,
 				SRC030 /* NotificationService.swift */,
 				SRC031 /* LoggingService.swift */,
@@ -243,6 +309,7 @@
 				SRC033 /* StorageAnalysisService.swift */,
 				UCSSRC001 /* UpdateCheckService.swift */,
 				SRC034 /* StorageInspectionService.swift */,
+				HSRC003 /* PrivilegedHelperService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -251,6 +318,8 @@
 			isa = PBXGroup;
 			children = (
 				GROUP001 /* MacStorageCleanupApp */,
+				HGROUP002 /* Shared */,
+				HGROUP001 /* MacCleanerHelper */,
 				GROUP002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -271,6 +340,21 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		HTARGET001 /* MacCleanerHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = HCONFIG001 /* Build configuration list for PBXNativeTarget "MacCleanerHelper" */;
+			buildPhases = (
+				HPHASE001 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacCleanerHelper;
+			productName = MacCleanerHelper;
+			productReference = HPRODUCT001 /* MacCleanerHelper */;
+			productType = "com.apple.product-type.tool";
+		};
 		TARGET001 /* MacStorageCleanupApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CONFIG001 /* Build configuration list for PBXNativeTarget "MacStorageCleanupApp" */;
@@ -278,10 +362,13 @@
 				PHASE001 /* Sources */,
 				FRAMEWORKS001 /* Frameworks */,
 				PHASE002 /* Resources */,
+				HCOPY001 /* Embed Privileged Helper */,
+				HCOPY002 /* Copy Launch Daemon Property List */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				HDEP001 /* PBXTargetDependency */,
 			);
 			name = MacStorageCleanupApp;
 			packageProductDependencies = (
@@ -338,6 +425,7 @@
 			projectRoot = "";
 			targets = (
 				TARGET001 /* MacStorageCleanupApp */,
+				HTARGET001 /* MacCleanerHelper */,
 				TESTTARGET001 /* MacStorageCleanupAppTests */,
 			);
 		};
@@ -355,6 +443,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		HPHASE001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				HBUILD001 /* main.swift in Sources */,
+				HBUILD002 /* PrivilegedHelperProtocol.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		PHASE001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -374,6 +471,9 @@
 				APP008 /* CategoryDetailView.swift in Sources */,
 				APP009 /* StorageItemData.swift in Sources */,
 				F15E177C2F5329C9006A282A /* SystemStatsService.swift in Sources */,
+				F15E19012F5329C9006A282A /* MemoryCleanupService.swift in Sources */,
+				HBUILD003 /* PrivilegedHelperProtocol.swift in Sources */,
+				HBUILD004 /* PrivilegedHelperService.swift in Sources */,
 				F15E177D2F5329C9006A282A /* MenuBarManager.swift in Sources */,
 				APP010 /* ScanView.swift in Sources */,
 				APP011 /* CleanupCandidateData.swift in Sources */,
@@ -423,6 +523,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		HDEP001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = HTARGET001 /* MacCleanerHelper */;
+			targetProxy = HPROXY001 /* PBXContainerItemProxy */;
+		};
 		TESTDEP001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = TARGET001 /* MacStorageCleanupApp */;
@@ -431,6 +536,54 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		HDEBUG001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = 2;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = D27PA9832J;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MacCleanerHelper/Helper-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup.helper;
+				PRODUCT_NAME = MacCleanerHelper;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		HRELEASE001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = 2;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = D27PA9832J;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MacCleanerHelper/Helper-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup.helper;
+				PRODUCT_NAME = MacCleanerHelper;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		DEBUG001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -692,6 +845,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		HCONFIG001 /* Build configuration list for PBXNativeTarget "MacCleanerHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				HDEBUG001 /* Debug */,
+				HRELEASE001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CONFIG001 /* Build configuration list for PBXNativeTarget "MacStorageCleanupApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

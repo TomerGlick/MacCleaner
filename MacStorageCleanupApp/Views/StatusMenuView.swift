@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StatusMenuView: View {
     @StateObject private var statsService = SystemStatsService.shared
+    @StateObject private var memoryService = MemoryCleanupService.shared
     @State private var machineName = Host.current().localizedName ?? "MacBook"
     
     var body: some View {
@@ -56,7 +57,10 @@ struct StatusMenuView: View {
                             icon: "memorychip",
                             title: "Memory",
                             value: statsService.memoryUsed,
-                            subtitle: "Pressure: \(Int(statsService.memoryPressure))%"
+                            subtitle: "Pressure: \(Int(statsService.memoryPressure))%",
+                            actionText: memoryService.isFreeingMemory ? "Freeing…" : "Free RAM",
+                            action: freeUpMemory,
+                            isActionDisabled: memoryService.isFreeingMemory
                         )
                         
                         // CPU
@@ -95,17 +99,37 @@ struct StatusMenuView: View {
                 .padding(16)
             }
             
-            // Footer Button
-            Button(action: openMainApp) {
-                Text("Open Mac Storage Cleanup")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(8)
+            if let message = memoryService.statusMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal)
             }
-            .buttonStyle(.plain)
+
+            // Footer Buttons
+            HStack(spacing: 12) {
+                Button(action: openMainApp) {
+                    Text("Open Mac Storage Cleanup")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: quitApp) {
+                    Label("Quit", systemImage: "power")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding()
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .help("Quit Mac Storage Cleanup")
+            }
             .padding()
         }
         .frame(width: 400, height: 600)
@@ -120,6 +144,19 @@ struct StatusMenuView: View {
         openMainApp()
     }
     
+    private func freeUpMemory() {
+        Task {
+            await memoryService.freeUpMemory()
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            memoryService.clearStatusMessage()
+        }
+    }
+
+    private func quitApp() {
+        MenuBarManager.shared.togglePopover()
+        NSApp.terminate(nil)
+    }
+
     private func openMainApp() {
         // Close the popover first
         MenuBarManager.shared.togglePopover()
@@ -193,6 +230,9 @@ struct MiniStatCard: View {
     let title: String
     let value: String
     let subtitle: String
+    var actionText: String? = nil
+    var action: (() -> Void)? = nil
+    var isActionDisabled: Bool = false
     
     var body: some View {
         VStack(spacing: 8) {
@@ -211,6 +251,20 @@ struct MiniStatCard: View {
             Text(subtitle)
                 .font(.caption2)
                 .foregroundColor(.secondary)
+            
+            if let actionText = actionText, let action = action {
+                Button(action: action) {
+                    Text(actionText)
+                        .font(.caption)
+                        .foregroundColor(isActionDisabled ? .secondary : .blue)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.blue.opacity(isActionDisabled ? 0.05 : 0.1))
+                        .cornerRadius(6)
+                }
+                .buttonStyle(.plain)
+                .disabled(isActionDisabled)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding()

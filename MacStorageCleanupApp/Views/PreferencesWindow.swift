@@ -5,6 +5,8 @@ import MacStorageCleanupCore
 struct PreferencesWindow: View {
     @StateObject private var viewModel = PreferencesViewModel()
     @StateObject private var updateService = UpdateCheckService.shared
+    @StateObject private var helperService = PrivilegedHelperService.shared
+    @State private var helperMessage: String?
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -85,6 +87,34 @@ struct PreferencesWindow: View {
             }
             
             Section {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(helperStatusTitle)
+                        Text("Lets “Free RAM” run without asking for your password every time.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    if helperService.isInstalled {
+                        Button("Remove", action: removeHelper)
+                    } else {
+                        Button("Install…", action: installHelper)
+                    }
+                }
+
+                if let helperMessage = helperMessage {
+                    Text(helperMessage)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } header: {
+                Text("Memory Helper")
+                    .font(.headline)
+            }
+
+            Section {
                 Text("The menu bar icon provides quick access to system statistics and cleanup tools without opening the main window.")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -96,8 +126,45 @@ struct PreferencesWindow: View {
         }
         .formStyle(.grouped)
         .padding()
+        .onAppear { helperService.refreshStatus() }
     }
     
+    // MARK: - Memory Helper
+
+    private var helperStatusTitle: String {
+        switch helperService.status {
+        case .enabled:
+            return "Installed"
+        case .requiresApproval:
+            return "Waiting for your approval in System Settings"
+        default:
+            return "Not installed"
+        }
+    }
+
+    private func installHelper() {
+        helperMessage = nil
+        do {
+            try helperService.install()
+            helperMessage = "Installed. “Free RAM” now runs without a password."
+        } catch PrivilegedHelperService.HelperError.needsApproval {
+            helperService.openLoginItemsSettings()
+            helperMessage = PrivilegedHelperService.HelperError.needsApproval.errorDescription
+        } catch {
+            helperMessage = error.localizedDescription
+        }
+    }
+
+    private func removeHelper() {
+        helperMessage = nil
+        do {
+            try helperService.uninstall()
+            helperMessage = "Removed. “Free RAM” will ask for your password again."
+        } catch {
+            helperMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Backup Preferences Tab
     
     private var backupPreferencesTab: some View {

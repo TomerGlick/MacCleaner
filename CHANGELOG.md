@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Free RAM: the menu bar popover can flush inactive and cached memory with the system
+  `purge` tool, and reports how much came back
+- Quit button in the menu bar popover
+- Optional privileged helper (Preferences › General) so Free RAM runs without a password
+  prompt each time. It exposes a single action, pins the app by code signature, and can
+  be removed from Preferences or System Settings › General › Login Items. The app offers
+  it once on first launch; "Not now" is remembered and Free RAM falls back to asking for
+  a password per use
+
 ## [1.5.0] - 2026-09-20
 
 ### Added

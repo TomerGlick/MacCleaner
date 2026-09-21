@@ -134,6 +134,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Start system monitoring
         SystemStatsService.shared.startMonitoring()
         
+        // Offer the memory helper once, after the first launch has settled.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            PrivilegedHelperService.shared.presentFirstRunOfferIfNeeded()
+        }
+        
         // Listen for show main window notification
         NotificationCenter.default.addObserver(
             self,

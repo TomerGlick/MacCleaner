@@ -64,6 +64,10 @@ public struct UserPreferences: Codable, Equatable {
     /// version pins is a much smaller ask than letting it offer that code's output for
     /// deletion.
     public var scanProjectBuildArtifacts: Bool
+    /// Whether the user has been offered the privileged helper that lets "Free RAM" run
+    /// without a password. Asked once on launch; "Not now" is an answer, and Preferences
+    /// keeps the offer available.
+    public var hasPromptedForMemoryHelper: Bool
     
     /// Default preferences
     public static let `default` = UserPreferences(
@@ -84,7 +88,8 @@ public struct UserPreferences: Codable, Equatable {
         latestKnownVersion: nil,
         projectFolders: [],
         hasPromptedForProjectFolders: false,
-        scanProjectBuildArtifacts: false
+        scanProjectBuildArtifacts: false,
+        hasPromptedForMemoryHelper: false
     )
     
     /// Safe categories that can be included in scheduled cleanup
@@ -118,7 +123,8 @@ public struct UserPreferences: Codable, Equatable {
         latestKnownVersion: String? = nil,
         projectFolders: [String] = [],
         hasPromptedForProjectFolders: Bool = false,
-        scanProjectBuildArtifacts: Bool = false
+        scanProjectBuildArtifacts: Bool = false,
+        hasPromptedForMemoryHelper: Bool = false
     ) {
         self.showMenuBarIcon = showMenuBarIcon
         self.launchAtLogin = launchAtLogin
@@ -138,6 +144,7 @@ public struct UserPreferences: Codable, Equatable {
         self.projectFolders = projectFolders
         self.hasPromptedForProjectFolders = hasPromptedForProjectFolders
         self.scanProjectBuildArtifacts = scanProjectBuildArtifacts
+        self.hasPromptedForMemoryHelper = hasPromptedForMemoryHelper
     }
 
     enum CodingKeys: String, CodingKey {
@@ -159,6 +166,7 @@ public struct UserPreferences: Codable, Equatable {
         case projectFolders
         case hasPromptedForProjectFolders
         case scanProjectBuildArtifacts
+        case hasPromptedForMemoryHelper
         /// Pre-1.5 name, when the folders existed only to drive the build artifact scan.
         case projectArtifactScanRoots
     }
@@ -185,6 +193,7 @@ public struct UserPreferences: Codable, Equatable {
         try container.encode(projectFolders, forKey: .projectFolders)
         try container.encode(hasPromptedForProjectFolders, forKey: .hasPromptedForProjectFolders)
         try container.encode(scanProjectBuildArtifacts, forKey: .scanProjectBuildArtifacts)
+        try container.encode(hasPromptedForMemoryHelper, forKey: .hasPromptedForMemoryHelper)
     }
 
     public init(from decoder: Decoder) throws {
@@ -217,5 +226,7 @@ public struct UserPreferences: Codable, Equatable {
             ?? !(legacyRoots ?? []).isEmpty
         scanProjectBuildArtifacts = try container.decodeIfPresent(Bool.self, forKey: .scanProjectBuildArtifacts)
             ?? !(legacyRoots ?? []).isEmpty
+        hasPromptedForMemoryHelper = try container.decodeIfPresent(Bool.self, forKey: .hasPromptedForMemoryHelper)
+            ?? defaults.hasPromptedForMemoryHelper
     }
 }
