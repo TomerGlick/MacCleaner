@@ -112,4 +112,4 @@ Feel free to open an issue with the "question" label if you need help or clarifi
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the GNU General Public License v3.0.
