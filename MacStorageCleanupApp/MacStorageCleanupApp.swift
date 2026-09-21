@@ -120,10 +120,11 @@ struct MacStorageCleanupApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    /// Set only by the menu bar popover's Quit action. Every other quit path
-    /// (Cmd+Q, the Quit menu item, closing the last window) keeps the menu bar
-    /// session running instead of tearing the process down.
-    static var isPerformingFullQuit = false
+    /// Lets a termination through. Two things ask for one: the menu bar popover's
+    /// Quit button, and Sparkle, which installs an update by terminating the app.
+    /// Every other quit path (Cmd+Q, the Quit menu item, closing the last window)
+    /// keeps the menu bar session running instead of tearing the process down.
+    static var allowsTermination = false
 
     /// Windows hidden by `enterMenuBarOnlyMode`, kept so the exact same windows
     /// come back instead of guessing at one from `NSApp.windows`.
@@ -204,8 +205,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // Quitting from the popover means the user wants the menu bar gone too.
-        if AppDelegate.isPerformingFullQuit {
+        // Quitting from the popover, or an update replacing the app, goes through.
+        if AppDelegate.allowsTermination {
             return .terminateNow
         }
 
