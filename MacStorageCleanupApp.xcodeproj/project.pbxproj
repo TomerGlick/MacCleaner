@@ -68,6 +68,12 @@
 		TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC004 /* CleanupCandidateRiskTests.swift */; };
 		TESTBF005 /* CleanupCandidatesGroupSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */; };
 		TESTFWK001 /* MacStorageCleanupCore in Frameworks */ = {isa = PBXBuildFile; productRef = TESTPKG001 /* MacStorageCleanupCore */; };
+		MNT001 /* MaintenanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = MNTSRC001 /* MaintenanceService.swift */; };
+		MNT002 /* MaintenanceInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = MNTSRC002 /* MaintenanceInspector.swift */; };
+		MNT003 /* SystemHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = MNTSRC003 /* SystemHealth.swift */; };
+		MNT004 /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MNTSRC004 /* MaintenanceView.swift */; };
+		TESTBF006 /* SystemHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC006 /* SystemHealthTests.swift */; };
+		TESTBF007 /* MaintenanceInspectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TESTSRC007 /* MaintenanceInspectorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -174,6 +180,12 @@
 		TESTSRC003 /* StorageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageViewModelTests.swift; sourceTree = "<group>"; };
 		TESTSRC004 /* CleanupCandidateRiskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidateRiskTests.swift; sourceTree = "<group>"; };
 		TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupCandidatesGroupSelectionTests.swift; sourceTree = "<group>"; };
+		MNTSRC001 /* MaintenanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceService.swift; sourceTree = "<group>"; };
+		MNTSRC002 /* MaintenanceInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceInspector.swift; sourceTree = "<group>"; };
+		MNTSRC003 /* SystemHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemHealth.swift; sourceTree = "<group>"; };
+		MNTSRC004 /* MaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceView.swift; sourceTree = "<group>"; };
+		TESTSRC006 /* SystemHealthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemHealthTests.swift; sourceTree = "<group>"; };
+		TESTSRC007 /* MaintenanceInspectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceInspectorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -265,6 +277,7 @@
 				SRC023 /* ApplicationUninstallView.swift */,
 				SRC025 /* PreferencesWindow.swift */,
 				SRC027 /* BackupManagementView.swift */,
+				MNTSRC004 /* MaintenanceView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -310,6 +323,9 @@
 				SRC034 /* StorageInspectionService.swift */,
 				HSRC003 /* PrivilegedHelperService.swift */,
 				SPARKLE004 /* AppUpdaterService.swift */,
+				MNTSRC001 /* MaintenanceService.swift */,
+				MNTSRC002 /* MaintenanceInspector.swift */,
+				MNTSRC003 /* SystemHealth.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -332,6 +348,8 @@
 				TESTSRC003 /* StorageViewModelTests.swift */,
 				TESTSRC004 /* CleanupCandidateRiskTests.swift */,
 				TESTSRC005 /* CleanupCandidatesGroupSelectionTests.swift */,
+				TESTSRC006 /* SystemHealthTests.swift */,
+				TESTSRC007 /* MaintenanceInspectorTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -459,6 +477,10 @@
 			files = (
 				PFP001 /* ProjectFoldersPrompt.swift in Sources */,
 				APP001 /* MacStorageCleanupApp.swift in Sources */,
+				MNT001 /* MaintenanceService.swift in Sources */,
+				MNT002 /* MaintenanceInspector.swift in Sources */,
+				MNT003 /* SystemHealth.swift in Sources */,
+				MNT004 /* MaintenanceView.swift in Sources */,
 				F1FFAFE02F50A348005C6ACB /* DiskSpaceBar.swift in Sources */,
 				F15E17782F5329B3006A282A /* PreferencesView.swift in Sources */,
 				F15E17792F5329B3006A282A /* StatusMenuView.swift in Sources */,
@@ -513,6 +535,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				TESTBF001 /* CleanupProgressViewModelTests.swift in Sources */,
+				TESTBF006 /* SystemHealthTests.swift in Sources */,
+				TESTBF007 /* MaintenanceInspectorTests.swift in Sources */,
 				TESTBF002 /* CleanupResultsViewModelTests.swift in Sources */,
 				TESTBF003 /* StorageViewModelTests.swift in Sources */,
 				TESTBF004 /* CleanupCandidateRiskTests.swift in Sources */,
@@ -543,7 +567,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = D27PA9832J;
@@ -551,7 +575,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "MacCleanerHelper/Helper-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.7.2;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup.helper;
 				PRODUCT_NAME = MacCleanerHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -567,7 +591,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = D27PA9832J;
@@ -575,7 +599,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "MacCleanerHelper/Helper-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.7.2;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup.helper;
 				PRODUCT_NAME = MacCleanerHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -658,7 +682,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = D27PA9832J;
@@ -686,7 +710,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.7.2;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -761,7 +785,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = D27PA9832J;
@@ -789,7 +813,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.7.2;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomerglick.MacStorageCleanup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

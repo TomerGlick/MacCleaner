@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-11-08
+
+### Added
+- **Leftovers**: finds data that removed apps left under `~/Library`, grouped by app. Only
+  folders named after a bundle identifier are considered, checked against Spotlight, the
+  usual application folders and running processes. Caches are pre-selected; containers,
+  Application Support and preferences are not
+- **Maintenance** tab: stale window state, broken launch agents, download history,
+  notification history, `.DS_Store` files and dead login items. Every job shows what it
+  found before removing anything
+- **Health Score** in the menu bar popover: one 0-100 number with the reasons behind it
+- Brave, Arc, Opera and Vivaldi browser caches
+- Claude Code, Codex CLI, Gemini CLI, Windsurf and Zed caches. Only regenerable
+  subfolders are listed, never the tool's folder that holds logins and history
+- Cache groups for Discord, Notion, Figma, Steam, WhatsApp, Telegram, Signal, 1Password,
+  Docker, Zed, Warp, Postman and Obsidian
+
 ## [1.7.2] - 2026-09-21
 
 ### Added

@@ -45,6 +45,46 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 - **Downloads Cleanup** - Review your Downloads folder grouped by type (documents, images, archives, installers)
 - **Log Files** - Clear accumulated application and system logs
 
+### 🧾 Leftovers from Removed Apps
+Uninstalling on macOS means dragging a bundle to the Trash, which leaves everything the app
+ever wrote under `~/Library` behind forever. The Leftovers view finds that residue and
+groups it under the app it belonged to.
+
+- **Named owners only** — a folder is considered only when it is named after a bundle
+  identifier (`com.acme.Widget`), because that names an owner we can check. A product
+  folder like `Adobe` or `Google` names nothing verifiable and is never touched
+- **Checked against everything installed** — the app index is built from Spotlight (so apps
+  on external volumes and in nested folders count), the usual application directories, and
+  every running process
+- **Helpers stay with their app** — `com.acme.Widget.Helper` belongs to `com.acme.Widget`,
+  and a suite folder belongs to the apps beneath it. Prefix matches in both directions are
+  treated as still-installed
+- **Only what has gone quiet** — a path written to in the last month is not a leftover,
+  whatever the index says
+- **Caches are pre-selected, documents are not** — an absent app's caches cost nothing to
+  lose. Its containers, Application Support and preferences hold licences and settings that
+  never come back, so those start unchecked
+
+### 🔧 Maintenance
+Stale system state that no amount of cache cleaning will reach. Every job looks first and
+shows what it found before anything is removed, and every job works inside your own Library
+without ever asking for administrator rights.
+
+- **Saved Window State** — window layouts kept for apps you have not opened in a month
+- **Broken Launch Agents** — background-job definitions whose program is no longer on disk.
+  An agent that names a bare command rather than a path is left alone, because launchd
+  resolves those against its own search path and we cannot reproduce that
+- **Download History** — Gatekeeper's record of where downloaded files came from
+- **Notification History** — delivered notifications older than a month. On macOS 15 and
+  later this database lives in a group container that no app can read and no permission
+  unlocks, and the task says exactly that rather than sending you to Full Disk Access
+- **Finder Metadata** — the `.DS_Store` files Finder scatters through your folders. This one
+  walks your home directory, so it waits to be asked rather than running when the tab opens,
+  and stops with a partial answer rather than hanging
+- **Login Items** — reports legacy login items pointing at software that is gone. Read-only:
+  items registered the modern way are managed in System Settings, and this says so rather
+  than pretending its list is complete
+
 ### 🛡️ Safety First
 - **Risk Indicators** - Every row and group heading carries a traffic-light dot, explained
   by a legend above the list:
@@ -86,6 +126,14 @@ A powerful, native macOS application to clean up your Mac and free up storage sp
 
 ### 📊 Menu Bar System Monitor
 - **Always Accessible** - Status bar icon stays visible even when app is closed
+- **Health Score** - One 0–100 number with the reasons behind it, worst first ("Disk 94%
+  full", "Up for 20 days"). Built only from things the app actually measures: CPU, memory
+  pressure, disk usage, battery wear and uptime. Battery wear is read from the battery's own
+  `NominalChargeCapacity` against its `DesignCapacity` — the figure System Information calls
+  Maximum Capacity — because the power-source API's "max capacity" is a percentage of the
+  present full charge and reads 100 on every Mac however worn the battery is. CPU temperature is deliberately left
+  out of it, because the temperature shown elsewhere is derived from CPU load rather than
+  read from a sensor, and scoring it would count the same load twice
 - **Real-time System Stats** - Monitor your Mac's health at a glance
   - Storage: Available disk space with quick cleanup access
   - Memory: RAM usage and pressure percentage
