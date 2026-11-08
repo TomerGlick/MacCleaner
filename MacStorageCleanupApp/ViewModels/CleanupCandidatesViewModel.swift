@@ -484,7 +484,22 @@ class CleanupCandidatesViewModel: ObservableObject {
         ("zoom", "Zoom"),
         ("us.zoom", "Zoom"),
         ("spotify", "Spotify"),
-        ("com.spotify", "Spotify")
+        ("com.spotify", "Spotify"),
+        ("discord", "Discord"),
+        ("notion", "Notion"),
+        ("figma", "Figma"),
+        ("steam", "Steam"),
+        ("com.valvesoftware", "Steam"),
+        ("whatsapp", "WhatsApp"),
+        ("telegram", "Telegram"),
+        ("org.whispersystems", "Signal"),
+        ("1password", "1Password"),
+        ("com.agilebits", "1Password"),
+        ("docker", "Docker"),
+        ("dev.zed", "Zed"),
+        ("dev.warp", "Warp"),
+        ("postman", "Postman"),
+        ("obsidian", "Obsidian")
     ]
 
     /// Threshold under which unrecognized cache folders are bucketed into "Other Caches"

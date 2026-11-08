@@ -44,6 +44,27 @@ final class CacheManagerTests: XCTestCase {
         }
     }
     
+    func testChromiumBrowsersAddedWithOwnCachePaths() {
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        XCTAssertEqual(Browser.brave.cachePath, "\(homeDir)/Library/Caches/BraveSoftware/Brave-Browser")
+        XCTAssertEqual(Browser.arc.cachePath, "\(homeDir)/Library/Caches/company.thebrowser.Browser")
+        XCTAssertEqual(Browser.opera.cachePath, "\(homeDir)/Library/Caches/com.operasoftware.Opera")
+        XCTAssertEqual(Browser.vivaldi.cachePath, "\(homeDir)/Library/Caches/Vivaldi")
+    }
+
+    /// These tools keep credentials and history in their root folder, so a cache path
+    /// pointing at the root would delete a login. Only subfolders may be listed.
+    func testAIAgentsNeverTargetToolRootFolder() {
+        let home = "/Users/test"
+        let roots: Set<String> = ["\(home)/.claude", "\(home)/.codex", "\(home)/.gemini"]
+        for agent in AIAgent.allCases {
+            for path in agent.cachePaths(homeDir: home) {
+                XCTAssertFalse(roots.contains(path), "\(agent.rawValue) targets root \(path)")
+            }
+        }
+        XCTAssertFalse(AIAgent.claude_code.cachePaths(homeDir: home).isEmpty)
+    }
+
     // MARK: - System Cache Tests
     
     func testFindSystemCachesReturnsArray() async {

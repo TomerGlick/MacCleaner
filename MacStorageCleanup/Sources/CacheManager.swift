@@ -398,6 +398,11 @@ public enum AIAgent: String, CaseIterable {
     case continue_dev
     case aider
     case openai_cli
+    case claude_code
+    case codex
+    case gemini_cli
+    case windsurf
+    case zed
     
     public var displayName: String {
         switch self {
@@ -409,6 +414,11 @@ public enum AIAgent: String, CaseIterable {
         case .continue_dev: return "Continue.dev"
         case .aider: return "Aider"
         case .openai_cli: return "OpenAI CLI"
+        case .claude_code: return "Claude Code"
+        case .codex: return "Codex CLI"
+        case .gemini_cli: return "Gemini CLI"
+        case .windsurf: return "Windsurf"
+        case .zed: return "Zed"
         }
     }
     
@@ -447,6 +457,25 @@ public enum AIAgent: String, CaseIterable {
             return ["\(homeDir)/.aider"]
         case .openai_cli:
             return ["\(homeDir)/.openai"]
+        // The agents below keep credentials, settings and conversation history beside their
+        // caches, so only regenerable subfolders are listed. Never the tool's root folder.
+        case .claude_code:
+            return [
+                "\(homeDir)/.claude/shell-snapshots",
+                "\(homeDir)/.claude/statsig",
+                "\(homeDir)/Library/Caches/claude-cli-nodejs"
+            ]
+        case .codex:
+            return ["\(homeDir)/.codex/log"]
+        case .gemini_cli:
+            return ["\(homeDir)/.gemini/tmp"]
+        case .windsurf:
+            return [
+                "\(homeDir)/Library/Application Support/Windsurf/Cache",
+                "\(homeDir)/Library/Application Support/Windsurf/CachedData"
+            ]
+        case .zed:
+            return ["\(homeDir)/Library/Caches/Zed"]
         }
     }
 }
@@ -470,6 +499,10 @@ public enum Browser: String, CaseIterable {
     case chrome
     case firefox
     case edge
+    case brave
+    case arc
+    case opera
+    case vivaldi
     
     /// Returns the cache directory path for this browser
     public var cachePath: String {
@@ -483,6 +516,14 @@ public enum Browser: String, CaseIterable {
             return "\(homeDir)/Library/Caches/Firefox"
         case .edge:
             return "\(homeDir)/Library/Caches/Microsoft Edge"
+        case .brave:
+            return "\(homeDir)/Library/Caches/BraveSoftware/Brave-Browser"
+        case .arc:
+            return "\(homeDir)/Library/Caches/company.thebrowser.Browser"
+        case .opera:
+            return "\(homeDir)/Library/Caches/com.operasoftware.Opera"
+        case .vivaldi:
+            return "\(homeDir)/Library/Caches/Vivaldi"
         }
     }
 }
