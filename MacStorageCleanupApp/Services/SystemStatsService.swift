@@ -1,4 +1,5 @@
 import Foundation
+import IOKit
 import IOKit.ps
 
 class SystemStatsService: ObservableObject {
@@ -11,10 +12,24 @@ class SystemStatsService: ObservableObject {
     @Published var batteryLevel: Int = 0
     @Published var batteryState: String = "Unknown"
     @Published var batteryHealth: String = "Normal"
+    /// Percent of the battery's *design* capacity it can still hold.
+    ///
+    /// Not `kIOPSMaxCapacityKey`: that reports 100 on every modern Mac, because it is a
+    /// percentage of the current full charge rather than of the original one. Reading it as
+    /// health means the figure is always perfect and never says anything.
     @Published var batteryMaxCapacity: Int = 100
+    @Published var batteryCycleCount: Int = 0
     @Published var networkUpload: String = "0 KB/s"
     @Published var networkDownload: String = "0 KB/s"
     @Published var uptime: String = "0h"
+    @Published var uptimeSeconds: TimeInterval = 0
+    /// Percent of the boot volume in use. Distinct from `availableStorage`, which is for
+    /// reading, not for arithmetic.
+    @Published var diskUsedPercent: Double = 0
+    /// One glanceable number, recomputed on every tick alongside the figures behind it.
+    @Published var health: SystemHealth = .unknown
+    /// Nil on a Mac with no battery, which is not a fault and must not be scored as one.
+    @Published var batteryIsPresent: Bool = false
     
     private var timer: Timer?
     private var previousNetworkStats: (sent: UInt64, received: UInt64)?
@@ -51,12 +66,26 @@ class SystemStatsService: ObservableObject {
             let battery = getBatteryInfo()
             self.batteryLevel = battery.level
             self.batteryState = battery.state
-            self.batteryHealth = battery.health
-            self.batteryMaxCapacity = battery.maxCapacity
+
+            let condition = getBatteryCondition()
+            self.batteryMaxCapacity = condition.capacityPercent ?? 100
+            self.batteryCycleCount = condition.cycleCount ?? 0
+            self.batteryHealth = condition.label
             let network = getNetworkStats()
             self.networkUpload = network.upload
             self.networkDownload = network.download
             self.uptime = getUptime()
+            self.uptimeSeconds = getUptimeSeconds()
+            self.diskUsedPercent = getDiskUsedPercent()
+            self.batteryIsPresent = battery.state != "Unknown"
+
+            self.health = SystemHealth.calculate(
+                cpuUsage: self.cpuUsage,
+                memoryPressure: self.memoryPressure,
+                diskUsedPercent: self.diskUsedPercent,
+                batteryMaxCapacity: self.batteryIsPresent ? self.batteryMaxCapacity : nil,
+                uptime: self.uptimeSeconds
+            )
         }
     }
     
@@ -165,6 +194,87 @@ class SystemStatsService: ObservableObject {
         return "0 GB"
     }
     
+    /// Share of the boot volume in use, as a percentage.
+    ///
+    /// Uses the same "available for important usage" figure Finder reports, so the number
+    /// agrees with what the user sees rather than with raw free blocks.
+    private func getDiskUsedPercent() -> Double {
+        let url = URL(fileURLWithPath: NSHomeDirectory())
+        do {
+            let values = try url.resourceValues(forKeys: [
+                .volumeTotalCapacityKey,
+                .volumeAvailableCapacityForImportantUsageKey
+            ])
+            guard let total = values.volumeTotalCapacity, total > 0 else { return 0 }
+            let available = values.volumeAvailableCapacityForImportantUsage ?? 0
+            let used = Double(total) - Double(available)
+            return max(0, min(100, used / Double(total) * 100))
+        } catch {
+            loggingService.error("Error reading volume capacity", error: error)
+            return 0
+        }
+    }
+
+    private func getUptimeSeconds() -> TimeInterval {
+        var mib = [CTL_KERN, KERN_BOOTTIME]
+        var bootTime = timeval()
+        var size = MemoryLayout<timeval>.stride
+
+        guard sysctl(&mib, u_int(mib.count), &bootTime, &size, nil, 0) == 0 else {
+            return ProcessInfo.processInfo.systemUptime
+        }
+
+        let bootTimeInterval = TimeInterval(bootTime.tv_sec) + TimeInterval(bootTime.tv_usec) / 1_000_000
+        return max(0, Date().timeIntervalSince1970 - bootTimeInterval)
+    }
+
+    /// Real battery wear, read from the battery itself.
+    ///
+    /// `AppleSmartBattery` publishes the charge the pack can still take
+    /// (`NominalChargeCapacity`) next to the charge it shipped with (`DesignCapacity`), and
+    /// their ratio is the number System Information calls Maximum Capacity. Everything else
+    /// available through the power-source API is a percentage of the present full charge,
+    /// which cannot fall below 100 no matter how worn the battery is.
+    private func getBatteryCondition() -> (capacityPercent: Int?, cycleCount: Int?, label: String) {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSmartBattery"))
+        guard service != 0 else {
+            return (nil, nil, "No battery")
+        }
+        defer { IOObjectRelease(service) }
+
+        var unmanaged: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(service, &unmanaged, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+              let properties = unmanaged?.takeRetainedValue() as? [String: Any] else {
+            return (nil, nil, "Unknown")
+        }
+
+        let design = properties["DesignCapacity"] as? Int
+        // NominalChargeCapacity is the modern key; AppleRawMaxCapacity is its predecessor.
+        let current = (properties["NominalChargeCapacity"] as? Int) ?? (properties["AppleRawMaxCapacity"] as? Int)
+        let cycles = properties["CycleCount"] as? Int
+        let hasPermanentFailure = (properties["PermanentFailureStatus"] as? Int ?? 0) != 0
+
+        guard let design, design > 0, let current else {
+            return (nil, cycles, "Unknown")
+        }
+
+        let percent = Int((Double(current) / Double(design) * 100).rounded())
+
+        let label: String
+        if hasPermanentFailure {
+            label = "Service Recommended"
+        } else if percent >= 80 {
+            label = "Normal"
+        } else if percent >= 60 {
+            label = "Fair"
+        } else {
+            label = "Service Recommended"
+        }
+
+        return (min(100, percent), cycles, label)
+    }
+
+    /// Charge level and charging state. Wear is read separately by `getBatteryCondition()`.
     private func getBatteryInfo() -> (level: Int, state: String, health: String, maxCapacity: Int) {
         let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
         let sources = IOPSCopyPowerSourcesList(snapshot).takeRetainedValue() as Array

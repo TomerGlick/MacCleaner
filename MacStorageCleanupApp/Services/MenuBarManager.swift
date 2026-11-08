@@ -37,7 +37,9 @@ class MenuBarManager: NSObject {
         
         if popover == nil {
             popover = NSPopover()
-            popover?.contentSize = NSSize(width: 400, height: 600)
+            // The popover is sized from the view that fills it, so the two cannot drift
+            // apart and reintroduce a scroll bar.
+            popover?.contentSize = NSSize(width: 400, height: StatusMenuView.popoverHeight)
             popover?.behavior = .transient
         }
 
