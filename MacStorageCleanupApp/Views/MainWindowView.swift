@@ -16,6 +16,8 @@ struct MainWindowView: View {
         case storage
         case files
         case cleanup
+        case leftovers
+        case maintenance
         case applications
         case backups
     }
@@ -46,6 +48,17 @@ struct MainWindowView: View {
                     Section("Cleanup") {
                         Label("Cleanup Candidates", systemImage: "trash")
                             .tag(MainTab.cleanup)
+
+                        // Leftovers are a different question from caches — not "what can I
+                        // clear", but "what is still here for software I removed" — so they
+                        // get their own entry instead of another group in the cache list.
+                        Label("Leftovers", systemImage: "questionmark.folder")
+                            .tag(MainTab.leftovers)
+                    }
+
+                    Section("System") {
+                        Label("Maintenance", systemImage: "wrench.and.screwdriver")
+                            .tag(MainTab.maintenance)
                     }
 
                     Section("Overview") {
@@ -122,6 +135,10 @@ struct MainWindowView: View {
                     FileBrowserView()
                 case .cleanup:
                     cleanupView
+                case .leftovers:
+                    leftoversView
+                case .maintenance:
+                    MaintenanceView()
                 case .applications:
                     ApplicationsListView()
                 case .backups:
@@ -251,6 +268,10 @@ struct MainWindowView: View {
     
     private var cleanupView: some View {
         CleanupCandidatesView(category: .caches, storageViewModel: viewModel)
+    }
+
+    private var leftoversView: some View {
+        CleanupCandidatesView(category: .leftovers, storageViewModel: viewModel)
     }
 }
 
