@@ -94,6 +94,8 @@ struct CleanupCategoryRowView: View {
             return "arrow.down.circle.fill"
         case .duplicates:
             return "doc.on.doc.fill"
+        case .leftovers:
+            return "questionmark.folder.fill"
         }
     }
 }

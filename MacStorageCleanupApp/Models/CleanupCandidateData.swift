@@ -164,6 +164,7 @@ struct CleanupCandidateData: Identifiable {
         case logs
         case downloads
         case duplicates
+        case leftovers
         
         var displayName: String {
             switch self {
@@ -174,6 +175,7 @@ struct CleanupCandidateData: Identifiable {
             case .logs: return "Logs"
             case .downloads: return "Downloads"
             case .duplicates: return "Duplicates"
+            case .leftovers: return "Leftovers"
             }
         }
         
@@ -186,6 +188,7 @@ struct CleanupCandidateData: Identifiable {
             case .logs: return "System and application log files"
             case .downloads: return "Files in your Downloads folder"
             case .duplicates: return "Duplicate files wasting space"
+            case .leftovers: return "Data left behind by apps you no longer have"
             }
         }
     }

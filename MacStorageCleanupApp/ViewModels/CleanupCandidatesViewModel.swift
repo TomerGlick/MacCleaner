@@ -366,6 +366,33 @@ class CleanupCandidatesViewModel: ObservableObject {
                 )
             }
 
+        case .leftovers:
+            loadingMessage = "Reading installed applications..."
+            loadingProgress = 0.2
+            let orphans = await scanForOrphanedAppData()
+
+            guard !Task.isCancelled else { return }
+
+            loadedCandidates = orphans.map { orphan in
+                CleanupCandidateData(
+                    path: orphan.location.path,
+                    name: "\(orphan.displayName) — \(orphan.kind.displayName)",
+                    size: orphan.size,
+                    modifiedDate: orphan.lastModified,
+                    accessedDate: orphan.lastModified,
+                    fileType: orphan.kind == .caches ? .cache : .other,
+                    category: .leftovers,
+                    groupLabel: "\(orphan.displayName) (\(orphan.bundleIdentifier))",
+                    // The app is gone, so its caches regenerate into nothing and cost
+                    // nothing to lose. Its documents, licences and settings do not come
+                    // back at all if the user reinstalls, so those are never pre-checked.
+                    isSelected: !orphan.kind.carriesUserData,
+                    safety: orphan.kind.carriesUserData ? .needsConfirmation : .alwaysSafe,
+                    needsFullDiskAccess: orphan.needsFullDiskAccess,
+                    isPartialSize: orphan.isPartialSize
+                )
+            }
+
         case .duplicates:
             loadingMessage = "Scanning for duplicate files..."
             loadingProgress = 0.3
@@ -397,6 +424,18 @@ class CleanupCandidatesViewModel: ObservableObject {
     }
 
     // MARK: - Real Scanning Helpers
+
+    /// Finds data belonging to applications that are no longer installed.
+    ///
+    /// Building the installed-application index reads every app bundle on the machine, and
+    /// the scan then measures directories, so both run off the main actor.
+    private func scanForOrphanedAppData() async -> [OrphanedAppData] {
+        await Task.detached(priority: .userInitiated) {
+            let installed = InstalledApplicationIndex.current()
+            let scanner = OrphanedAppDataScanner(sizer: DirectorySizer(), installed: installed)
+            return scanner.scan()
+        }.value
+    }
 
     /// Vendor affiliation for developer tools that are published by a company already
     /// represented as its own cache group (e.g. Android Studio is a Google product, so its
@@ -477,11 +516,25 @@ class CleanupCandidatesViewModel: ObservableObject {
     /// recognized vendor, or "Other Caches"). Only meaningful for the `.caches` category;
     /// other categories are returned as a single unlabeled group.
     var groupedCandidates: [(label: String, items: [CleanupCandidateData])] {
-        guard selectedCategory == .caches else {
+        guard isGrouped else {
             return [(label: "", items: filteredCandidates)]
         }
 
         let grouped = Dictionary(grouping: filteredCandidates) { $0.groupLabel ?? $0.name }
+
+        // Leftovers are one heading per removed app, and the only question the user has is
+        // which of them is worth the click. Biggest first answers it.
+        if selectedCategory == .leftovers {
+            return grouped
+                .map { (label: $0.key, items: $0.value) }
+                .sorted { lhs, rhs in
+                    let lhsSize = lhs.items.reduce(Int64(0)) { $0 + $1.size }
+                    let rhsSize = rhs.items.reduce(Int64(0)) { $0 + $1.size }
+                    if lhsSize != rhsSize { return lhsSize > rhsSize }
+                    return lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
+                }
+        }
+
         return grouped
             .map { (label: $0.key, items: $0.value) }
             .sorted { lhs, rhs in
@@ -706,7 +759,17 @@ class CleanupCandidatesViewModel: ObservableObject {
     /// The visible items under a group heading. Mirrors `groupedCandidates`, so a group
     /// toggle only ever touches what the user can actually see under that heading.
     private func itemsInGroup(_ label: String) -> [CleanupCandidateData] {
-        guard selectedCategory == .caches else { return filteredCandidates }
+        guard isGrouped else { return filteredCandidates }
         return filteredCandidates.filter { ($0.groupLabel ?? $0.name) == label }
+    }
+
+    /// Whether this category's rows are shown under headings.
+    ///
+    /// `groupedCandidates` and `itemsInGroup` both read this rather than testing the
+    /// category themselves. When they disagree, a heading reports and acts on every row in
+    /// the list instead of the ones beneath it — which is what a new grouped category
+    /// silently caused until this was pulled out.
+    private var isGrouped: Bool {
+        selectedCategory == .caches || selectedCategory == .leftovers
     }
 }

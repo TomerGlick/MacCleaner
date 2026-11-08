@@ -9,6 +9,7 @@ let coreSources = [
     "CleanupEngine.swift",
     "DeveloperCacheScanner.swift",
     "DirectorySizer.swift",
+    "OrphanedAppDataScanner.swift",
     "ProjectArtifactScanner.swift",
     "ProjectReferenceIndex.swift",
     "FileScanner.swift",

@@ -26,8 +26,11 @@ final class CleanupCandidatesGroupSelectionTests: XCTestCase {
         )
     }
 
-    private func makeViewModel(_ candidates: [CleanupCandidateData]) -> CleanupCandidatesViewModel {
-        let viewModel = CleanupCandidatesViewModel(category: .caches)
+    private func makeViewModel(
+        _ candidates: [CleanupCandidateData],
+        category: CleanupCandidateData.CleanupCategoryType = .caches
+    ) -> CleanupCandidatesViewModel {
+        let viewModel = CleanupCandidatesViewModel(category: category)
         viewModel.candidates = candidates
         viewModel.filteredCandidates = candidates
         return viewModel
@@ -159,5 +162,42 @@ final class CleanupCandidatesGroupSelectionTests: XCTestCase {
         ])
 
         XCTAssertEqual(viewModel.riskLevel(inGroup: "Gradle"), .safe)
+    }
+
+    // MARK: - Every grouped category
+
+    /// A heading must only ever report and act on the rows under it. When a category is
+    /// grouped in the list but not in the selection helpers, every heading shows the whole
+    /// list's selection and one click ticks rows belonging to other apps entirely.
+    func testAGroupInAnyGroupedCategoryOnlyCoversItsOwnRows() {
+        for category in [CleanupCandidateData.CleanupCategoryType.caches, .leftovers] {
+            let viewModel = makeViewModel([
+                makeCandidate(name: "a", group: "Inkscape", size: 100, isSelected: true),
+                makeCandidate(name: "b", group: "Sketch", size: 900, isSelected: true)
+            ], category: category)
+
+            XCTAssertEqual(
+                viewModel.selectedSize(inGroup: "Inkscape"), 100,
+                "\(category) reported another group's bytes under this heading"
+            )
+            XCTAssertEqual(viewModel.selectedSize(inGroup: "Sketch"), 900)
+
+            viewModel.toggleGroupSelection("Inkscape")
+
+            XCTAssertFalse(viewModel.candidates[0].isSelected)
+            XCTAssertTrue(
+                viewModel.candidates[1].isSelected,
+                "\(category) cleared a row that was not under the heading that was clicked"
+            )
+        }
+    }
+
+    func testAnUngroupedCategoryStillTreatsTheWholeListAsOneGroup() {
+        let viewModel = makeViewModel([
+            makeCandidate(name: "a", group: "unused", size: 100, isSelected: true),
+            makeCandidate(name: "b", group: "unused", size: 900, isSelected: true)
+        ], category: .duplicates)
+
+        XCTAssertEqual(viewModel.selectedSize(inGroup: ""), 1000)
     }
 }
